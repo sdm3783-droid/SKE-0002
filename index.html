@@ -1,0 +1,105 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<script>
+    // 1. 전달해주신 실제 Firebase 설정값 적용
+    const firebaseConfig = {
+        apiKey: "AIzaSyCkp4Odbptw0v9EdDqcVogv_pVoLNc2ef4",
+        authDomain: "ske-0002.firebaseapp.com",
+        databaseURL: "https://ske-0002-default-rtdb.firebaseio.com",
+        projectId: "ske-0002",
+        storageBucket: "ske-0002.firebasestorage.app",
+        messagingSenderId: "554932618834",
+        appId: "1:554932618834:web:a90d739bedabd71424c18b",
+        measurementId: "G-F1SJTTCJ3Q"
+    };
+
+    // Firebase 초기화
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // --- 여기부터는 기존에 작성한 로직과 동일합니다 ---
+    let records = [];
+    let currentDate = new Date();
+    let selectedDate = null;
+    let selectedPerson = '';
+    let absences = [];
+    let myChart = null;
+    let filters = { person: '', month: '', day: '' };
+    const persons = ['박', '이', '1째', '2째', '송프리'];
+
+    function init() {
+        // Firebase 실시간 리스너 연결
+        db.ref('attendance').on('value', (snapshot) => {
+            const data = snapshot.val();
+            const loadedRecords = [];
+            if (data) {
+                Object.keys(data).forEach(person => {
+                    Object.keys(data[person]).forEach(date => {
+                        loadedRecords.push(data[person][date]);
+                    });
+                });
+                records = loadedRecords;
+            }
+            renderCalendar();
+            updateSummary();
+            renderRecords();
+            populateMonthFilter();
+        });
+
+        // 이벤트 리스너 등록
+        document.getElementById('prevMonth').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); };
+        document.getElementById('nextMonth').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); };
+        document.getElementById('saveBtn').onclick = saveRecord;
+        document.getElementById('deleteBtn').onclick = deleteCurrentRecord;
+        document.getElementById('addAbsenceBtn').onclick = addAbsenceField;
+        document.getElementById('filterMonth').onchange = (e) => { filters.month = e.target.value; renderRecords(); updateSummary(); };
+        document.getElementById('resetFilter').onclick = resetFilters;
+    }
+
+    // 저장 함수 (Firebase 전송)
+    function saveRecord() {
+        if(!selectedDate || !selectedPerson) return alert('직원과 날짜를 선택하세요');
+        
+        const st = document.getElementById('startTime').value;
+        const et = document.getElementById('endTime').value;
+        
+        // 시간 계산 (8:30 / 17:30 기준)
+        let late = 0, early = 0, absM = 0;
+        if(st && st > "08:30") {
+            const [h,m] = st.split(':').map(Number);
+            late = (h*60+m) - (8*60+30);
+        }
+        if(et && et < "17:30") {
+            const [h,m] = et.split(':').map(Number);
+            early = (17*60+30) - (h*60+m);
+        }
+        absences.forEach(a => {
+            if(a.startTime && a.endTime) {
+                const [sh,sm] = a.startTime.split(':').map(Number);
+                const [eh,em] = a.endTime.split(':').map(Number);
+                absM += (eh*60+em) - (sh*60+sm);
+            }
+        });
+
+        const newRec = {
+            date: selectedDate, person: selectedPerson, startTime: st, endTime: et,
+            lateMinutes: late, earlyMinutes: early, absenceMinutes: absM, 
+            absences: [...absences],
+            notes: document.getElementById('notes').value
+        };
+        
+        // Firebase에 저장
+        db.ref('attendance/' + selectedPerson + '/' + selectedDate).set(newRec)
+        .then(() => {
+            alert('기록이 클라우드에 안전하게 저장되었습니다!');
+        })
+        .catch(err => alert('저장 실패: ' + err.message));
+    }
+
+    // (나머지 renderCalendar, updateSummary, renderRecords 등은 기존과 동일)
+    // ... 중략 ...
+
+    init();
+</script>
