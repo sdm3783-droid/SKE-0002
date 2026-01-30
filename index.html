@@ -1,105 +1,214 @@
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SKE-0002 근태 관리 시스템</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <style>
+        /* (이전 스타일과 동일 - 지면 관계상 생략하지만 꼭 포함하세요) */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .section { background: #fff; border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .calendar-day { padding: 10px; border: 1px solid #eee; cursor: pointer; border-radius: 4px; }
+        .calendar-day.selected { background: #667eea; color: white; }
+        .calendar-day.has-record { border: 2px solid #ff6b6b; }
+        .chart-container { height: 300px; margin-top: 20px; }
+        .person-btn { padding: 10px; margin: 2px; cursor: pointer; border: 1px solid #ddd; background: white; }
+        .person-btn.active { background: #667eea; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="text-align:center; margin-bottom:30px;">
+            <h1>🕐 SKE-0002 근태 관리</h1>
+        </header>
 
-<script>
-    // 1. 전달해주신 실제 Firebase 설정값 적용
-    const firebaseConfig = {
-        apiKey: "AIzaSyCkp4Odbptw0v9EdDqcVogv_pVoLNc2ef4",
-        authDomain: "ske-0002.firebaseapp.com",
-        databaseURL: "https://ske-0002-default-rtdb.firebaseio.com",
-        projectId: "ske-0002",
-        storageBucket: "ske-0002.firebasestorage.app",
-        messagingSenderId: "554932618834",
-        appId: "1:554932618834:web:a90d739bedabd71424c18b",
-        measurementId: "G-F1SJTTCJ3Q"
-    };
+        <div class="main-content">
+            <div class="section">
+                <h2>📅 날짜 선택</h2>
+                <div id="currentMonth" style="font-weight:bold; margin: 10px 0;"></div>
+                <div style="margin-bottom:10px;">
+                    <button id="prevMonth">이전</button>
+                    <button id="nextMonth">다음</button>
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+            </div>
 
-    // Firebase 초기화
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+            <div class="section">
+                <h2>⏰ 기록 입력</h2>
+                <div id="personSelect" style="margin: 10px 0;"></div>
+                <p>선택 날짜: <input type="text" id="selectedDate" readonly style="border:none; font-weight:bold;"></p>
+                <div style="margin:10px 0;">
+                    출근: <input type="time" id="startTime"> 
+                    퇴근: <input type="time" id="endTime">
+                </div>
+                <textarea id="notes" placeholder="비고 입력" style="width:100%; height:60px;"></textarea>
+                <button id="saveBtn" style="width:100%; padding:10px; background:#667eea; color:white; border:none; border-radius:5px; margin-top:10px; cursor:pointer;">저장하기</button>
+            </div>
 
-    // --- 여기부터는 기존에 작성한 로직과 동일합니다 ---
-    let records = [];
-    let currentDate = new Date();
-    let selectedDate = null;
-    let selectedPerson = '';
-    let absences = [];
-    let myChart = null;
-    let filters = { person: '', month: '', day: '' };
-    const persons = ['박', '이', '1째', '2째', '송프리'];
+            <div class="section" style="grid-column: 1 / -1;">
+                <h2>📊 통계 및 기록</h2>
+                <div class="chart-container"><canvas id="attendanceChart"></canvas></div>
+                <table id="recordsTable">
+                    <thead>
+                        <tr><th>날짜</th><th>직원</th><th>출근</th><th>퇴근</th><th>지각</th><th>비고</th></tr>
+                    </thead>
+                    <tbody id="recordsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-    function init() {
-        // Firebase 실시간 리스너 연결
-        db.ref('attendance').on('value', (snapshot) => {
-            const data = snapshot.val();
-            const loadedRecords = [];
-            if (data) {
-                Object.keys(data).forEach(person => {
-                    Object.keys(data[person]).forEach(date => {
-                        loadedRecords.push(data[person][date]);
-                    });
-                });
-                records = loadedRecords;
-            }
-            renderCalendar();
-            updateSummary();
-            renderRecords();
-            populateMonthFilter();
-        });
-
-        // 이벤트 리스너 등록
-        document.getElementById('prevMonth').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); };
-        document.getElementById('nextMonth').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); };
-        document.getElementById('saveBtn').onclick = saveRecord;
-        document.getElementById('deleteBtn').onclick = deleteCurrentRecord;
-        document.getElementById('addAbsenceBtn').onclick = addAbsenceField;
-        document.getElementById('filterMonth').onchange = (e) => { filters.month = e.target.value; renderRecords(); updateSummary(); };
-        document.getElementById('resetFilter').onclick = resetFilters;
-    }
-
-    // 저장 함수 (Firebase 전송)
-    function saveRecord() {
-        if(!selectedDate || !selectedPerson) return alert('직원과 날짜를 선택하세요');
-        
-        const st = document.getElementById('startTime').value;
-        const et = document.getElementById('endTime').value;
-        
-        // 시간 계산 (8:30 / 17:30 기준)
-        let late = 0, early = 0, absM = 0;
-        if(st && st > "08:30") {
-            const [h,m] = st.split(':').map(Number);
-            late = (h*60+m) - (8*60+30);
-        }
-        if(et && et < "17:30") {
-            const [h,m] = et.split(':').map(Number);
-            early = (17*60+30) - (h*60+m);
-        }
-        absences.forEach(a => {
-            if(a.startTime && a.endTime) {
-                const [sh,sm] = a.startTime.split(':').map(Number);
-                const [eh,em] = a.endTime.split(':').map(Number);
-                absM += (eh*60+em) - (sh*60+sm);
-            }
-        });
-
-        const newRec = {
-            date: selectedDate, person: selectedPerson, startTime: st, endTime: et,
-            lateMinutes: late, earlyMinutes: early, absenceMinutes: absM, 
-            absences: [...absences],
-            notes: document.getElementById('notes').value
+    <script>
+        // 1. Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkp4Odbptw0v9EdDqcVogv_pVoLNc2ef4",
+            authDomain: "ske-0002.firebaseapp.com",
+            databaseURL: "https://ske-0002-default-rtdb.firebaseio.com",
+            projectId: "ske-0002",
+            storageBucket: "ske-0002.firebasestorage.app",
+            messagingSenderId: "554932618834",
+            appId: "1:554932618834:web:a90d739bedabd71424c18b"
         };
-        
-        // Firebase에 저장
-        db.ref('attendance/' + selectedPerson + '/' + selectedDate).set(newRec)
-        .then(() => {
-            alert('기록이 클라우드에 안전하게 저장되었습니다!');
-        })
-        .catch(err => alert('저장 실패: ' + err.message));
-    }
 
-    // (나머지 renderCalendar, updateSummary, renderRecords 등은 기존과 동일)
-    // ... 중략 ...
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-    init();
-</script>
+        // 2. 변수 초기화
+        let records = [];
+        let currentDate = new Date();
+        let selectedDate = null;
+        let selectedPerson = '';
+        let myChart = null;
+        const persons = ['박', '이', '1째', '2째', '송프리'];
+
+        // 3. 함수 정의 (정의되지 않았다는 에러 방지를 위해 위쪽에 배치)
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const grid = document.getElementById('calendarGrid');
+            if(!grid) return;
+            
+            document.getElementById('currentMonth').textContent = `${year}년 ${month + 1}월`;
+            grid.innerHTML = '';
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+
+            for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
+            
+            for(let i=1; i<=lastDate; i++) {
+                const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day' + (records.some(r=>r.date===dateStr)?' has-record':'');
+                dayEl.textContent = i;
+                dayEl.onclick = () => {
+                    document.querySelectorAll('.calendar-day').forEach(d=>d.classList.remove('selected'));
+                    dayEl.classList.add('selected');
+                    selectedDate = dateStr;
+                    document.getElementById('selectedDate').value = dateStr;
+                    loadData();
+                };
+                grid.appendChild(dayEl);
+            }
+        }
+
+        function updateSummary() {
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            const data = persons.map(p => {
+                return records.filter(r => r.person === p).reduce((sum, r) => sum + (r.lateMinutes || 0), 0);
+            });
+
+            if(myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: persons,
+                    datasets: [{ label: '누적 지각(분)', data: data, backgroundColor: '#667eea' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function renderRecords() {
+            const tbody = document.getElementById('recordsBody');
+            tbody.innerHTML = records.sort((a,b)=>b.date.localeCompare(a.date)).map(r => `
+                <tr>
+                    <td>${r.date}</td><td>${r.person}</td><td>${r.startTime||'-'}</td>
+                    <td>${r.endTime||'-'}</td><td>${r.lateMinutes||0}</td><td>${r.notes||''}</td>
+                </tr>
+            `).join('');
+        }
+
+        function loadData() {
+            const r = records.find(x => x.date === selectedDate && x.person === selectedPerson);
+            document.getElementById('startTime').value = r ? r.startTime : '';
+            document.getElementById('endTime').value = r ? r.endTime : '';
+            document.getElementById('notes').value = r ? r.notes : '';
+        }
+
+        function saveRecord() {
+            if(!selectedDate || !selectedPerson) return alert('직원과 날짜를 먼저 선택하세요!');
+            const st = document.getElementById('startTime').value;
+            const et = document.getElementById('endTime').value;
+            let late = 0;
+            if(st && st > "08:30") {
+                const [h,m] = st.split(':').map(Number);
+                late = (h*60+m) - (8*60+30);
+            }
+            const data = {
+                date: selectedDate, person: selectedPerson,
+                startTime: st, endTime: et, lateMinutes: late,
+                notes: document.getElementById('notes').value
+            };
+            db.ref('attendance/' + selectedPerson + '/' + selectedDate).set(data)
+              .then(() => alert('저장 성공!'));
+        }
+
+        // 4. 실행 및 이벤트 바인딩
+        window.onload = () => {
+            // 직원 선택 버튼 생성
+            const ps = document.getElementById('personSelect');
+            persons.forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = 'person-btn';
+                btn.textContent = p;
+                btn.onclick = () => {
+                    document.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedPerson = p;
+                    loadData();
+                };
+                ps.appendChild(btn);
+            });
+
+            // Firebase 실시간 수신
+            db.ref('attendance').on('value', (snapshot) => {
+                const val = snapshot.val();
+                records = [];
+                if(val) {
+                    Object.values(val).forEach(pData => {
+                        Object.values(pData).forEach(r => records.push(r));
+                    });
+                }
+                renderCalendar();
+                updateSummary();
+                renderRecords();
+            });
+
+            document.getElementById('prevMonth').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); renderCalendar(); };
+            document.getElementById('nextMonth').onclick = () => { currentDate.setMonth(currentDate.getMonth()+1); renderCalendar(); };
+            document.getElementById('saveBtn').onclick = saveRecord;
+        };
+    </script>
+</body>
+</html>
