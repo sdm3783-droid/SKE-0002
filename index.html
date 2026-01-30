@@ -8,68 +8,82 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        /* (이전 스타일과 동일 - 지면 관계상 생략하지만 꼭 포함하세요) */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .section { background: #fff; border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
+        /* 기본 디자인 */
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 30px; color: #667eea; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .box { background: #fff; border: 1px solid #eee; padding: 20px; border-radius: 10px; }
+        h2 { font-size: 1.2rem; margin-bottom: 15px; border-left: 4px solid #667eea; padding-left: 10px; }
+        
+        /* 캘린더 디자인 */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .calendar-day { padding: 10px; border: 1px solid #eee; cursor: pointer; border-radius: 4px; }
-        .calendar-day.selected { background: #667eea; color: white; }
-        .calendar-day.has-record { border: 2px solid #ff6b6b; }
-        .chart-container { height: 300px; margin-top: 20px; }
-        .person-btn { padding: 10px; margin: 2px; cursor: pointer; border: 1px solid #ddd; background: white; }
-        .person-btn.active { background: #667eea; color: white; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #f8f9fa; }
+        .calendar-day { padding: 10px; border: 1px solid #f0f0f0; cursor: pointer; border-radius: 5px; font-size: 0.9rem; }
+        .calendar-day:hover { background: #f0f4ff; }
+        .calendar-day.selected { background: #667eea; color: white; font-weight: bold; }
+        .calendar-day.has-record { background: #fff5f5; border: 1px solid #ff6b6b; color: #ff6b6b; }
+        
+        /* 버튼 및 폼 */
+        .person-btn { padding: 8px 15px; margin: 3px; border: 1px solid #ddd; border-radius: 5px; background: #fff; cursor: pointer; }
+        .person-btn.active { background: #667eea; color: white; border-color: #667eea; }
+        .btn-save { width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-top: 5px; }
+        
+        /* 통계 및 테이블 */
+        .chart-box { grid-column: 1 / -1; height: 300px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: center; }
+        th { background: #f9f9f9; color: #666; }
     </style>
 </head>
 <body>
     <div class="container">
-        <header style="text-align:center; margin-bottom:30px;">
-            <h1>🕐 SKE-0002 근태 관리</h1>
-        </header>
-
-        <div class="main-content">
-            <div class="section">
+        <h1 class="header">SKE-0002 실시간 근태 관리</h1>
+        
+        <div class="grid">
+            <div class="box">
                 <h2>📅 날짜 선택</h2>
-                <div id="currentMonth" style="font-weight:bold; margin: 10px 0;"></div>
-                <div style="margin-bottom:10px;">
-                    <button id="prevMonth">이전</button>
-                    <button id="nextMonth">다음</button>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <button onclick="changeMonth(-1)">◀</button>
+                    <span id="monthLabel" style="font-weight:bold;"></span>
+                    <button onclick="changeMonth(1)">▶</button>
                 </div>
                 <div class="calendar-grid" id="calendarGrid"></div>
             </div>
 
-            <div class="section">
-                <h2>⏰ 기록 입력</h2>
-                <div id="personSelect" style="margin: 10px 0;"></div>
-                <p>선택 날짜: <input type="text" id="selectedDate" readonly style="border:none; font-weight:bold;"></p>
-                <div style="margin:10px 0;">
-                    출근: <input type="time" id="startTime"> 
-                    퇴근: <input type="time" id="endTime">
+            <div class="box">
+                <h2>⏰ 정보 입력</h2>
+                <div id="personGroup"></div>
+                <div style="margin-top:15px;">
+                    <label>날짜: <input type="text" id="viewDate" readonly></label>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <label>출근: <input type="time" id="stTime"></label>
+                        <label>퇴근: <input type="time" id="etTime"></label>
+                    </div>
+                    <label style="margin-top:10px; display:block;">비고: <textarea id="memo" rows="2"></textarea></label>
+                    <button class="btn-save" onclick="handleSave()">저장하기</button>
                 </div>
-                <textarea id="notes" placeholder="비고 입력" style="width:100%; height:60px;"></textarea>
-                <button id="saveBtn" style="width:100%; padding:10px; background:#667eea; color:white; border:none; border-radius:5px; margin-top:10px; cursor:pointer;">저장하기</button>
             </div>
 
-            <div class="section" style="grid-column: 1 / -1;">
-                <h2>📊 통계 및 기록</h2>
-                <div class="chart-container"><canvas id="attendanceChart"></canvas></div>
-                <table id="recordsTable">
+            <div class="box chart-box">
+                <h2>📊 지각 누계 통계</h2>
+                <canvas id="statChart"></canvas>
+            </div>
+
+            <div class="box chart-box" style="height:auto; overflow-y:auto;">
+                <h2>📝 전체 기록</h2>
+                <table>
                     <thead>
-                        <tr><th>날짜</th><th>직원</th><th>출근</th><th>퇴근</th><th>지각</th><th>비고</th></tr>
+                        <tr><th>날짜</th><th>직원</th><th>출근</th><th>퇴근</th><th>지각(분)</th><th>비고</th></tr>
                     </thead>
-                    <tbody id="recordsBody"></tbody>
+                    <tbody id="listBody"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        // 1. Firebase 설정
+        // 1. 설정 정보
         const firebaseConfig = {
             apiKey: "AIzaSyCkp4Odbptw0v9EdDqcVogv_pVoLNc2ef4",
             authDomain: "ske-0002.firebaseapp.com",
@@ -83,132 +97,135 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. 변수 초기화
         let records = [];
-        let currentDate = new Date();
-        let selectedDate = null;
-        let selectedPerson = '';
-        let myChart = null;
-        const persons = ['박', '이', '1째', '2째', '송프리'];
+        let viewDate = new Date();
+        let selDateStr = "";
+        let selUser = "";
+        let chartObj = null;
+        const users = ['박', '이', '1째', '2째', '송프리'];
 
-        // 3. 함수 정의 (정의되지 않았다는 에러 방지를 위해 위쪽에 배치)
-        function renderCalendar() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            const grid = document.getElementById('calendarGrid');
-            if(!grid) return;
+        // 2. 초기화 함수 (에러 방지를 위해 window.onload 사용)
+        window.onload = function() {
+            initUserButtons();
             
-            document.getElementById('currentMonth').textContent = `${year}년 ${month + 1}월`;
-            grid.innerHTML = '';
+            // 데이터 수신 리스너
+            db.ref('attendance').on('value', (snap) => {
+                const val = snap.val();
+                records = [];
+                if(val) {
+                    Object.values(val).forEach(uData => {
+                        Object.values(uData).forEach(r => records.push(r));
+                    });
+                }
+                drawCalendar();
+                updateChart();
+                updateTable();
+            });
+        };
 
-            const firstDay = new Date(year, month, 1).getDay();
-            const lastDate = new Date(year, month + 1, 0).getDate();
+        function initUserButtons() {
+            const container = document.getElementById('personGroup');
+            users.forEach(u => {
+                const btn = document.createElement('button');
+                btn.className = 'person-btn';
+                btn.textContent = u;
+                btn.onclick = () => {
+                    document.querySelectorAll('.person-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selUser = u;
+                    loadDetail();
+                };
+                container.appendChild(btn);
+            });
+        }
 
-            for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
+        function drawCalendar() {
+            const y = viewDate.getFullYear();
+            const m = viewDate.getMonth();
+            const grid = document.getElementById('calendarGrid');
+            document.getElementById('monthLabel').textContent = `${y}년 ${m + 1}월`;
+            grid.innerHTML = "";
+
+            const startDay = new Date(y, m, 1).getDay();
+            const lastDate = new Date(y, m + 1, 0).getDate();
+
+            for(let i=0; i<startDay; i++) grid.appendChild(document.createElement('div'));
             
             for(let i=1; i<=lastDate; i++) {
-                const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-                const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day' + (records.some(r=>r.date===dateStr)?' has-record':'');
-                dayEl.textContent = i;
-                dayEl.onclick = () => {
-                    document.querySelectorAll('.calendar-day').forEach(d=>d.classList.remove('selected'));
-                    dayEl.classList.add('selected');
-                    selectedDate = dateStr;
-                    document.getElementById('selectedDate').value = dateStr;
-                    loadData();
+                const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+                const day = document.createElement('div');
+                day.className = 'calendar-day' + (records.some(r => r.date === dStr) ? ' has-record' : '');
+                day.textContent = i;
+                if(selDateStr === dStr) day.classList.add('selected');
+                day.onclick = () => {
+                    selDateStr = dStr;
+                    document.getElementById('viewDate').value = dStr;
+                    drawCalendar();
+                    loadDetail();
                 };
-                grid.appendChild(dayEl);
+                grid.appendChild(day);
             }
         }
 
-        function updateSummary() {
-            const ctx = document.getElementById('attendanceChart').getContext('2d');
-            const data = persons.map(p => {
-                return records.filter(r => r.person === p).reduce((sum, r) => sum + (r.lateMinutes || 0), 0);
-            });
+        function changeMonth(step) {
+            viewDate.setMonth(viewDate.getMonth() + step);
+            drawCalendar();
+        }
 
-            if(myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
+        function loadDetail() {
+            if(!selDateStr || !selUser) return;
+            const r = records.find(x => x.date === selDateStr && x.person === selUser);
+            document.getElementById('stTime').value = r ? r.startTime : "";
+            document.getElementById('etTime').value = r ? r.endTime : "";
+            document.getElementById('memo').value = r ? r.notes : "";
+        }
+
+        function handleSave() {
+            if(!selDateStr || !selUser) return alert("직원과 날짜를 선택하세요!");
+            
+            const st = document.getElementById('stTime').value;
+            const et = document.getElementById('etTime').value;
+            let lateM = 0;
+            
+            if(st && st > "08:30") {
+                const [h, min] = st.split(':').map(Number);
+                lateM = (h * 60 + min) - (8 * 60 + 30);
+            }
+
+            const payload = {
+                date: selDateStr, person: selUser,
+                startTime: st, endTime: et, lateMinutes: lateM,
+                notes: document.getElementById('memo').value
+            };
+
+            db.ref(`attendance/${selUser}/${selDateStr}`).set(payload)
+              .then(() => alert("저장되었습니다!"));
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('statChart').getContext('2d');
+            const data = users.map(u => records.filter(r => r.person === u).reduce((acc, r) => acc + (r.lateMinutes || 0), 0));
+
+            if(chartObj) chartObj.destroy();
+            chartObj = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: persons,
-                    datasets: [{ label: '누적 지각(분)', data: data, backgroundColor: '#667eea' }]
+                    labels: users,
+                    datasets: [{ label: '총 지각 시간(분)', data: data, backgroundColor: '#667eea' }]
                 },
                 options: { responsive: true, maintainAspectRatio: false }
             });
         }
 
-        function renderRecords() {
-            const tbody = document.getElementById('recordsBody');
-            tbody.innerHTML = records.sort((a,b)=>b.date.localeCompare(a.date)).map(r => `
+        function updateTable() {
+            const body = document.getElementById('listBody');
+            body.innerHTML = records.sort((a,b) => b.date.localeCompare(a.date)).map(r => `
                 <tr>
                     <td>${r.date}</td><td>${r.person}</td><td>${r.startTime||'-'}</td>
                     <td>${r.endTime||'-'}</td><td>${r.lateMinutes||0}</td><td>${r.notes||''}</td>
                 </tr>
             `).join('');
         }
-
-        function loadData() {
-            const r = records.find(x => x.date === selectedDate && x.person === selectedPerson);
-            document.getElementById('startTime').value = r ? r.startTime : '';
-            document.getElementById('endTime').value = r ? r.endTime : '';
-            document.getElementById('notes').value = r ? r.notes : '';
-        }
-
-        function saveRecord() {
-            if(!selectedDate || !selectedPerson) return alert('직원과 날짜를 먼저 선택하세요!');
-            const st = document.getElementById('startTime').value;
-            const et = document.getElementById('endTime').value;
-            let late = 0;
-            if(st && st > "08:30") {
-                const [h,m] = st.split(':').map(Number);
-                late = (h*60+m) - (8*60+30);
-            }
-            const data = {
-                date: selectedDate, person: selectedPerson,
-                startTime: st, endTime: et, lateMinutes: late,
-                notes: document.getElementById('notes').value
-            };
-            db.ref('attendance/' + selectedPerson + '/' + selectedDate).set(data)
-              .then(() => alert('저장 성공!'));
-        }
-
-        // 4. 실행 및 이벤트 바인딩
-        window.onload = () => {
-            // 직원 선택 버튼 생성
-            const ps = document.getElementById('personSelect');
-            persons.forEach(p => {
-                const btn = document.createElement('button');
-                btn.className = 'person-btn';
-                btn.textContent = p;
-                btn.onclick = () => {
-                    document.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active'));
-                    btn.classList.add('active');
-                    selectedPerson = p;
-                    loadData();
-                };
-                ps.appendChild(btn);
-            });
-
-            // Firebase 실시간 수신
-            db.ref('attendance').on('value', (snapshot) => {
-                const val = snapshot.val();
-                records = [];
-                if(val) {
-                    Object.values(val).forEach(pData => {
-                        Object.values(pData).forEach(r => records.push(r));
-                    });
-                }
-                renderCalendar();
-                updateSummary();
-                renderRecords();
-            });
-
-            document.getElementById('prevMonth').onclick = () => { currentDate.setMonth(currentDate.getMonth()-1); renderCalendar(); };
-            document.getElementById('nextMonth').onclick = () => { currentDate.setMonth(currentDate.getMonth()+1); renderCalendar(); };
-            document.getElementById('saveBtn').onclick = saveRecord;
-        };
     </script>
 </body>
 </html>
