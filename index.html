@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>언제오시나? </title>
+    <title>언제오시나?</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        /* 기본 리셋 및 폰트 */
+        /* 기본 레이아웃 리셋 */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 10px; color: #333; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 10px; }
         
         .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 15px; text-align: center; }
-        .header h1 { font-size: 1.4rem; margin-bottom: 5px; }
-        .header p { font-size: 0.85rem; opacity: 0.9; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 10px; text-align: center; }
+        .header h1 { font-size: 1.3rem; margin-bottom: 5px; }
+        .header p { font-size: 0.8rem; opacity: 0.9; }
 
-        /* [핵심] 메인 레이아웃: 기본 1열, PC에서만 2열 */
+        /* [핵심] 반응형 레이아웃: 모바일은 1열, PC(900px 이상)는 2열 */
         .main-content { display: flex; flex-direction: column; gap: 15px; padding: 15px; }
         
         @media (min-width: 900px) {
@@ -25,46 +25,44 @@
             .full-width { grid-column: 1 / -1; }
         }
 
-        .section { background: #fdfdfd; padding: 15px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .section h2 { color: #667eea; margin-bottom: 15px; font-size: 1.1rem; border-left: 4px solid #667eea; padding-left: 10px; }
+        .section { background: #fdfdfd; padding: 15px; border-radius: 12px; border: 1px solid #eee; }
+        .section h2 { color: #667eea; margin-bottom: 12px; font-size: 1.1rem; border-left: 4px solid #667eea; padding-left: 8px; }
 
-        /* 달력 스타일 최적화 */
-        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .calendar-header button { padding: 5px 12px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-        .calendar-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 1px solid #f0f0f0; border-radius: 5px; cursor: pointer; font-size: 0.85rem; font-weight: 600; background: white; }
-        .calendar-day.selected { background: #667eea !important; color: white !important; border-color: #667eea; }
-        .calendar-day.has-record { background: #fff0f0; border-color: #ffcccc; color: #ff4757; }
+        /* 달력 최적화 */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .calendar-header button { padding: 5px 10px; background: #667eea; color: white; border: none; border-radius: 5px; font-size: 0.8rem; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .calendar-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 1px solid #f0f0f0; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; background: white; }
+        .calendar-day.selected { background: #667eea !important; color: white !important; }
+        .calendar-day.has-record { border-color: #ff6b6b; color: #ff6b6b; font-weight: bold; }
         .calendar-day.sun { color: #ff4757; }
         .calendar-day.sat { color: #3182ce; }
 
         /* 입력 폼 */
-        .person-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
-        .person-btn { padding: 10px 5px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
+        .person-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
+        .person-btn { padding: 10px 5px; border: 1px solid #ddd; border-radius: 5px; background: white; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
         .person-btn.active { background: #667eea; color: white; border-color: #667eea; }
         
-        .time-box { border: 1px dashed #667eea; padding: 12px; border-radius: 10px; background: #f9faff; margin-bottom: 12px; }
-        .time-row { display: flex; gap: 8px; margin-bottom: 8px; }
-        .time-row:last-child { margin-bottom: 0; }
+        .time-box { border: 1px dashed #667eea; padding: 10px; border-radius: 10px; background: #f9faff; margin-bottom: 10px; }
+        .time-row { display: flex; gap: 5px; margin-bottom: 5px; }
         .time-input-group { flex: 1; }
-        .time-input-group label { display: block; font-size: 0.75rem; margin-bottom: 3px; color: #666; }
-        .time-input-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.9rem; }
+        .time-input-group label { display: block; font-size: 0.7rem; margin-bottom: 2px; color: #666; }
+        .time-input-group input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.85rem; }
 
-        textarea { width: 100%; border: 1px solid #ccc; border-radius: 5px; padding: 8px; font-size: 0.9rem; resize: none; }
-        .btn-save { background: #667eea; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; font-size: 1rem; margin-top: 10px; }
+        textarea { width: 100%; border: 1px solid #ccc; border-radius: 5px; padding: 6px; font-size: 0.85rem; }
+        .btn-save { background: #667eea; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
 
-        /* 하단 차트 및 요약 */
-        .chart-container { height: 180px; margin-bottom: 15px; position: relative; }
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
-        .summary-card { background: white; padding: 10px; border-radius: 8px; border: 1px solid #eee; text-align: center; cursor: pointer; }
+        /* 통계 및 차트 */
+        .chart-container { height: 180px; margin-bottom: 10px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 5px; }
+        .summary-card { background: white; padding: 8px; border-radius: 8px; border: 1px solid #eee; text-align: center; font-size: 0.8rem; cursor: pointer; }
         .summary-card.active { border-color: #667eea; background: #f0f4ff; }
-        .summary-card h3 { font-size: 0.8rem; color: #777; margin-bottom: 3px; }
-        .summary-card div { font-size: 1rem; font-weight: bold; color: #667eea; }
+        .summary-card div { font-weight: bold; color: #667eea; }
 
-        /* 테이블 래퍼 */
-        .table-scroll { width: 100%; overflow-x: auto; margin-top: 10px; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; min-width: 650px; }
-        th, td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: left; font-size: 0.8rem; }
+        /* 테이블 스크롤 보장 */
+        .table-scroll { width: 100%; overflow-x: auto; margin-top: 10px; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; font-size: 0.75rem; }
         th { background: #f4f4f4; color: #666; }
         .late-text { color: #ff4757; font-weight: bold; }
     </style>
@@ -73,15 +71,15 @@
     <div class="container">
         <div class="header">
             <h1>🕐 언제오시나?</h1>
-            <p>8:30 출근 / 17:30 퇴근 기준</p>
+            <p>8:30 출근 / 17:30 퇴근 / 점심시간(12:30~13:30) 자동 제외</p>
         </div>
         
         <div class="main-content">
             <div class="section">
                 <div class="calendar-header">
-                    <button onclick="changeMonth(-1)">◀</button>
-                    <h2 id="monthLabel" style="border:none;"></h2>
-                    <button onclick="changeMonth(1)">▶</button>
+                    <button onclick="changeMonth(-1)">◀ 이전</button>
+                    <h2 id="monthLabel" style="border:none; margin:0; font-size:1rem;"></h2>
+                    <button onclick="changeMonth(1)">다음 ▶</button>
                 </div>
                 <div id="calendarGrid" class="calendar-grid"></div>
             </div>
@@ -89,7 +87,7 @@
             <div class="section">
                 <h2>⏰ 정보 입력</h2>
                 <div id="personList" class="person-grid"></div>
-                <div style="margin-bottom:10px; font-size:0.9rem;">날짜: <span id="viewDate" style="font-weight:bold; color:#667eea;">날짜를 선택하세요</span></div>
+                <div style="margin-bottom:8px; font-size:0.85rem;">날짜: <span id="viewDate" style="font-weight:bold; color:#667eea;">날짜 선택</span></div>
                 
                 <div class="time-box">
                     <div class="time-row">
@@ -101,7 +99,7 @@
                         <div class="time-input-group"><label>복귀</label><input type="time" id="rt"></div>
                     </div>
                 </div>
-                <div style="margin-bottom:10px;"><label style="font-size:0.8rem; color:#666;">비고</label><textarea id="memo" rows="2"></textarea></div>
+                <div><label style="font-size:0.75rem; color:#666;">비고</label><textarea id="memo" rows="2"></textarea></div>
                 <button class="btn-save" onclick="doSave()">저장하기</button>
             </div>
 
@@ -110,11 +108,11 @@
                 <div class="chart-container"><canvas id="barChart"></canvas></div>
                 <div id="summaryBox" class="summary-grid"></div>
                 
-                <h2 style="margin-top:20px;">📝 근태 기록 목록 <span id="curFilter" style="font-size:0.7rem; color:#ff4757;"></span></h2>
+                <h2 style="margin-top:15px;">📝 기록 목록 <span id="curFilter" style="font-size:0.7rem; color:#ff4757;"></span></h2>
                 <div class="table-scroll">
                     <table>
                         <thead>
-                            <tr><th>날짜</th><th>직원</th><th>출근</th><th>퇴근</th><th>외출</th><th>복귀</th><th>지각/조퇴</th><th>비고</th><th>관리</th></tr>
+                            <tr><th>날짜</th><th>직원</th><th>출근</th><th>퇴근</th><th>외출</th><th>복귀</th><th>지각/조퇴/외출</th><th>비고</th><th>삭제</th></tr>
                         </thead>
                         <tbody id="listBody"></tbody>
                     </table>
@@ -124,7 +122,6 @@
     </div>
 
     <script>
-        // 1. Firebase 초기화
         const firebaseConfig = {
             apiKey: "AIzaSyCkp4Odbptw0v9EdDqcVogv_pVoLNc2ef4",
             authDomain: "ske-0002.firebaseapp.com",
@@ -137,10 +134,8 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. 상태 변수
         let allRecords = [], curDate = new Date(), selDate = null, selPerson = '', filterName = '', chartObj = null;
         const users = ['박', '이', '1째', '2째', '송프리'];
-
         const t2m = (t) => { if(!t) return 0; const [h,m] = t.split(':').map(Number); return h*60+m; };
 
         window.onload = () => {
@@ -157,12 +152,8 @@
             });
         };
 
-        function updateUI() {
-            document.querySelectorAll('.person-btn').forEach(b => b.classList.toggle('active', b.textContent === selPerson));
-        }
-
+        function updateUI() { document.querySelectorAll('.person-btn').forEach(b => b.classList.toggle('active', b.textContent === selPerson)); }
         function refresh() { renderCal(); renderStats(); renderTable(); }
-
         function changeMonth(n) { curDate.setMonth(curDate.getMonth() + n); refresh(); }
 
         function renderCal() {
@@ -191,12 +182,14 @@
             if(!selDate || !selPerson) return alert('날짜와 직원을 선택하세요!');
             const s = document.getElementById('st').value, e = document.getElementById('et').value;
             const o = document.getElementById('ot').value, r = document.getElementById('rt').value;
+            
             let miss = 0;
             if(s && t2m(s) > 510) miss += (t2m(s)-510);
             if(e && t2m(e) < 1050) miss += (1050-t2m(e));
             if(o && r) {
-                const overlap = Math.max(0, Math.min(t2m(r), 810) - Math.max(t2m(o), 750));
-                miss += ((t2m(r)-t2m(o)) - overlap);
+                const oM = t2m(o), rM = t2m(r);
+                const overlap = Math.max(0, Math.min(rM, 810) - Math.max(oM, 750)); // 점심시간(12:30~13:30) 중복 계산
+                miss += ((rM - oM) - overlap);
             }
             db.ref(`attendance/${selPerson}/${selDate}`).set({
                 date: selDate, person: selPerson, startTime: s, endTime: e, outTime: o, returnTime: r, lateMinutes: miss, notes: document.getElementById('memo').value
@@ -226,7 +219,7 @@
                     <td>${r.date}</td><td>${r.person}</td><td>${r.startTime||'-'}</td><td>${r.endTime||'-'}</td>
                     <td>${r.outTime||'-'}</td><td>${r.returnTime||'-'}</td>
                     <td class="late-text">${r.lateMinutes||0}분</td><td>${r.notes||''}</td>
-                    <td><button onclick="event.stopPropagation(); doDel('${r.date}','${r.person}')">삭제</button></td>
+                    <td><button onclick="event.stopPropagation(); doDel('${r.date}','${r.person}')" style="background:#ff4757; color:white; border:none; border-radius:3px; padding:3px 6px;">삭제</button></td>
                 </tr>`).join('');
         }
 
