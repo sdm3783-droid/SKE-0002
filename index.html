@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKE-0002 근태 관리 시스템</title>
+    <title>SKE-0002 근태 관리 시스템 (외출 합산형)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        /* [디자인] 기존 보라색 테마 및 UI 유지 */
+        /* 기존 보라색 테마 디자인 유지 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
@@ -41,7 +41,7 @@
         <div class="header">
             <div class="admin-tools"><button class="admin-btn" onclick="downloadExcel()">📥 엑셀 저장</button></div>
             <h1>🕐 언제오시나?</h1>
-            <p>8:30 출근 / 17:30 퇴근 기준 | 지각 및 조퇴 합산 시스템</p>
+            <p>8:30 출근 / 17:30 퇴근 기준 | 지각+조퇴+외출 완벽 합산</p>
         </div>
         <div class="main-content">
             <div class="section">
@@ -71,12 +71,12 @@
                 <button class="btn-primary" id="saveBtn" style="margin-top:15px;">저장 / 수정하기</button>
             </div>
             <div class="section" style="grid-column: 1 / -1;">
-                <h2>📊 실시간 통계 (지각+조퇴 합계) <span id="filterStatus" style="font-size: 0.6em; color: #ff4757; margin-left: 10px;"></span></h2>
+                <h2>📊 실시간 통계 (이탈 시간 총계) <span id="filterStatus" style="font-size: 0.6em; color: #ff4757; margin-left: 10px;"></span></h2>
                 <div class="summary-cards" id="summaryCards"></div>
                 <h2>📝 근태 기록 목록</h2>
                 <table>
                     <thead>
-                        <tr><th>날짜</th><th>직원</th><th>출근</th><th>퇴근</th><th>외출</th><th>복귀</th><th>지각/조퇴</th><th>실근무</th><th>비고</th><th>관리</th></tr>
+                        <tr><th>날짜</th><th>직원</th><th>출근</th><th>퇴근</th><th>외출</th><th>복귀</th><th>지각/조퇴/외출</th><th>실근무</th><th>비고</th><th>관리</th></tr>
                     </thead>
                     <tbody id="recordsBody"></tbody>
                 </table>
@@ -85,7 +85,6 @@
     </div>
 
     <script>
-        // 1. Firebase 설정 (기존 설정 유지)
         const firebaseConfig = {
             apiKey: "AIzaSyCkp4Odbptw0v9EdDqcVogv_pVoLNc2ef4",
             authDomain: "ske-0002.firebaseapp.com",
@@ -139,39 +138,39 @@
             }
         }
 
-        // [수정 포인트] 조기 퇴근 시간(17:30 이전) 자동 계산 및 지각 합산 로직
+        // [최종 수정] 지각 + 조퇴 + 외출시간을 모두 합산하는 로직
         function saveRecord() {
             if(!selectedDate || !selectedPerson) return alert('직원과 날짜를 선택하세요!');
-            const st = document.getElementById('startTime').value;
-            const et = document.getElementById('endTime').value;
-            const ot = document.getElementById('outTime').value;
-            const rt = document.getElementById('returnTime').value;
+            const st = document.getElementById('startTime').value, et = document.getElementById('endTime').value;
+            const ot = document.getElementById('outTime').value, rt = document.getElementById('returnTime').value;
 
-            let lateOrEarlyTotal = 0; // 지각 + 조퇴 합산 변수
+            let totalMissingMin = 0; // 전체 업무 이탈 시간 (분)
 
-            // 1. 지각 계산 (기준 08:30 = 510분)
-            if(st && toMin(st) > 510) {
-                lateOrEarlyTotal += (toMin(st) - 510);
+            // 1. 지각 체크 (08:30 기준)
+            if(st && toMin(st) > 510) totalMissingMin += (toMin(st) - 510);
+            
+            // 2. 조퇴 체크 (17:30 기준)
+            if(et && toMin(et) < 1050) totalMissingMin += (1050 - toMin(et));
+
+            // 3. 외출 시간 체크 (복귀 - 외출)
+            let outMin = 0;
+            if(ot && rt) {
+                outMin = toMin(rt) - toMin(ot);
+                if(outMin > 0) totalMissingMin += outMin;
             }
 
-            // 2. 조퇴 계산 (기준 17:30 = 1050분)
-            if(et && toMin(et) < 1050) {
-                lateOrEarlyTotal += (1050 - toMin(et));
-            }
-
-            // 3. 실 근무 시간 계산 (점심시간 비례 차감)
+            // 4. 실 근무 시간 계산 (점심 비례 차감 포함)
             let workMin = 0;
             if(st && et) {
                 const sM = toMin(st), eM = toMin(et);
-                let lunch = (eM >= 810) ? 60 : (eM > 750 ? eM - 750 : 0); // 13:30 이후 퇴근 시 1시간, 이전 시 비례 차감
-                const out = (ot && rt) ? (toMin(rt) - toMin(ot)) : 0;
-                workMin = (eM - sM) - lunch - out;
+                let lunch = (eM >= 810) ? 60 : (eM > 750 ? eM - 750 : 0);
+                workMin = (eM - sM) - lunch - outMin;
             }
 
             const data = {
-                date: selectedDate, person: selectedPerson,
-                startTime: st, endTime: et, outTime: ot, returnTime: rt,
-                lateMinutes: lateOrEarlyTotal, // 지각 + 조퇴 합산값 저장
+                date: selectedDate, person: selectedPerson, startTime: st, endTime: et,
+                outTime: ot, returnTime: rt, 
+                lateMinutes: totalMissingMin, // 지각+조퇴+외출 합산 저장
                 workMinutes: workMin, notes: document.getElementById('notes').value
             };
             db.ref(`attendance/${selectedPerson}/${selectedDate}`).set(data).then(() => alert('저장 완료!'));
@@ -205,7 +204,7 @@
             });
             document.getElementById('summaryCards').innerHTML = persons.map(p => `
                 <div class="summary-card ${filterPerson === p ? 'active' : ''}" onclick="toggleFilter('${p}')">
-                    <h3>${p}</h3><div style="font-size:1.5em; font-weight:bold; color:#667eea;">${summary[p]}분</div><p>지각+조퇴 합계</p>
+                    <h3>${p}</h3><div style="font-size:1.5em; font-weight:bold; color:#667eea;">${summary[p]}분</div><p>지각/조퇴/외출 합계</p>
                 </div>`).join('');
         }
 
@@ -230,7 +229,7 @@
         }
 
         function downloadExcel() {
-            let csv = "\uFEFF날짜,직원,출근,퇴근,외출,복귀,지각/조퇴(분),실근무(h),비고\n";
+            let csv = "\uFEFF날짜,직원,출근,퇴근,외출,복귀,지각/조퇴/외출(분),실근무(h),비고\n";
             records.forEach(r => { csv += `${r.date},${r.person},${r.startTime},${r.endTime},${r.outTime},${r.returnTime},${r.lateMinutes},${(r.workMinutes/60).toFixed(1)},${r.notes}\n`; });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `근태기록.csv`; link.click();
