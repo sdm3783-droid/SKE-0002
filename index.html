@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        /* 기존 보라색 테마 디자인 유지 */
+        /* 디자인은 기존과 동일하게 유지 (보라색 테마) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
@@ -41,7 +41,7 @@
         <div class="header">
             <div class="admin-tools"><button class="admin-btn" onclick="downloadExcel()">📥 엑셀 저장</button></div>
             <h1>🕐 언제오시나?</h1>
-            <p>8:30 출근 / 17:30 퇴근 기준 | 지각+조퇴+외출 완벽 합산</p>
+            <p>지각/조퇴/외출 시 점심시간(12:30~13:30)은 이탈 시간에서 제외됩니다.</p>
         </div>
         <div class="main-content">
             <div class="section">
@@ -71,7 +71,7 @@
                 <button class="btn-primary" id="saveBtn" style="margin-top:15px;">저장 / 수정하기</button>
             </div>
             <div class="section" style="grid-column: 1 / -1;">
-                <h2>📊 실시간 통계 (이탈 시간 총계) <span id="filterStatus" style="font-size: 0.6em; color: #ff4757; margin-left: 10px;"></span></h2>
+                <h2>📊 실시간 통계 (순수 이탈 시간) <span id="filterStatus" style="font-size: 0.6em; color: #ff4757; margin-left: 10px;"></span></h2>
                 <div class="summary-cards" id="summaryCards"></div>
                 <h2>📝 근태 기록 목록</h2>
                 <table>
@@ -138,39 +138,48 @@
             }
         }
 
-        // [최종 수정] 지각 + 조퇴 + 외출시간을 모두 합산하는 로직
+        // [중요] 점심시간 중복을 제외하고 순수 이탈 시간만 구하는 로직
         function saveRecord() {
             if(!selectedDate || !selectedPerson) return alert('직원과 날짜를 선택하세요!');
             const st = document.getElementById('startTime').value, et = document.getElementById('endTime').value;
             const ot = document.getElementById('outTime').value, rt = document.getElementById('returnTime').value;
 
-            let totalMissingMin = 0; // 전체 업무 이탈 시간 (분)
+            const LUNCH_START = 750; // 12:30
+            const LUNCH_END = 810;   // 13:30
+            let totalMissingMin = 0;
 
-            // 1. 지각 체크 (08:30 기준)
+            // 1. 지각 (08:30 기준)
             if(st && toMin(st) > 510) totalMissingMin += (toMin(st) - 510);
             
-            // 2. 조퇴 체크 (17:30 기준)
+            // 2. 조퇴 (17:30 기준)
             if(et && toMin(et) < 1050) totalMissingMin += (1050 - toMin(et));
 
-            // 3. 외출 시간 체크 (복귀 - 외출)
-            let outMin = 0;
+            // 3. 외출 - 점심시간 중복 차감 로직
+            let netOutMin = 0;
             if(ot && rt) {
-                outMin = toMin(rt) - toMin(ot);
-                if(outMin > 0) totalMissingMin += outMin;
+                const oM = toMin(ot), rM = toMin(rt);
+                let rawOut = rM - oM;
+                
+                // 외출 기간 중 점심시간(12:30~13:30)과 겹치는 분 계산
+                const overlapStart = Math.max(oM, LUNCH_START);
+                const overlapEnd = Math.min(rM, LUNCH_END);
+                const overlapLunch = Math.max(0, overlapEnd - overlapStart);
+                
+                netOutMin = rawOut - overlapLunch; // 외출 시간에서 점심시간 겹친 만큼 제외
+                totalMissingMin += netOutMin;
             }
 
-            // 4. 실 근무 시간 계산 (점심 비례 차감 포함)
+            // 4. 실 근무 시간 계산
             let workMin = 0;
             if(st && et) {
                 const sM = toMin(st), eM = toMin(et);
-                let lunch = (eM >= 810) ? 60 : (eM > 750 ? eM - 750 : 0);
-                workMin = (eM - sM) - lunch - outMin;
+                let lunchDeduction = (eM >= LUNCH_END) ? 60 : (eM > LUNCH_START ? eM - LUNCH_START : 0);
+                workMin = (eM - sM) - lunchDeduction - netOutMin;
             }
 
             const data = {
                 date: selectedDate, person: selectedPerson, startTime: st, endTime: et,
-                outTime: ot, returnTime: rt, 
-                lateMinutes: totalMissingMin, // 지각+조퇴+외출 합산 저장
+                outTime: ot, returnTime: rt, lateMinutes: totalMissingMin,
                 workMinutes: workMin, notes: document.getElementById('notes').value
             };
             db.ref(`attendance/${selectedPerson}/${selectedDate}`).set(data).then(() => alert('저장 완료!'));
