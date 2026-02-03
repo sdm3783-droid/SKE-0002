@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKE-0002 근태 관리 시스템 (최종)</title>
+    <title>SKE-0002 근태 관리 시스템</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
+        /* [디자인] 기존 보라색 테마 및 UI 유지 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
@@ -40,7 +41,7 @@
         <div class="header">
             <div class="admin-tools"><button class="admin-btn" onclick="downloadExcel()">📥 엑셀 저장</button></div>
             <h1>🕐 언제오시나?</h1>
-            <p>8:30 출근 / 17:30 퇴근 기준 | 지각 및 조퇴 합산 반영</p>
+            <p>8:30 출근 / 17:30 퇴근 기준 | 지각 및 조퇴 합산 시스템</p>
         </div>
         <div class="main-content">
             <div class="section">
@@ -84,6 +85,7 @@
     </div>
 
     <script>
+        // 1. Firebase 설정 (기존 설정 유지)
         const firebaseConfig = {
             apiKey: "AIzaSyCkp4Odbptw0v9EdDqcVogv_pVoLNc2ef4",
             authDomain: "ske-0002.firebaseapp.com",
@@ -137,28 +139,40 @@
             }
         }
 
+        // [수정 포인트] 조기 퇴근 시간(17:30 이전) 자동 계산 및 지각 합산 로직
         function saveRecord() {
             if(!selectedDate || !selectedPerson) return alert('직원과 날짜를 선택하세요!');
-            const st = document.getElementById('startTime').value, et = document.getElementById('endTime').value;
-            const ot = document.getElementById('outTime').value, rt = document.getElementById('returnTime').value;
+            const st = document.getElementById('startTime').value;
+            const et = document.getElementById('endTime').value;
+            const ot = document.getElementById('outTime').value;
+            const rt = document.getElementById('returnTime').value;
 
-            // 지각(08:30 이후) + 조퇴(17:30 이전) 계산
-            let lateOrEarly = 0;
-            if(st && toMin(st) > 510) lateOrEarly += (toMin(st) - 510);
-            if(et && toMin(et) < 1050) lateOrEarly += (1050 - toMin(et));
+            let lateOrEarlyTotal = 0; // 지각 + 조퇴 합산 변수
 
+            // 1. 지각 계산 (기준 08:30 = 510분)
+            if(st && toMin(st) > 510) {
+                lateOrEarlyTotal += (toMin(st) - 510);
+            }
+
+            // 2. 조퇴 계산 (기준 17:30 = 1050분)
+            if(et && toMin(et) < 1050) {
+                lateOrEarlyTotal += (1050 - toMin(et));
+            }
+
+            // 3. 실 근무 시간 계산 (점심시간 비례 차감)
             let workMin = 0;
             if(st && et) {
                 const sM = toMin(st), eM = toMin(et);
-                let lunch = (eM >= 810) ? 60 : (eM > 750 ? eM - 750 : 0);
+                let lunch = (eM >= 810) ? 60 : (eM > 750 ? eM - 750 : 0); // 13:30 이후 퇴근 시 1시간, 이전 시 비례 차감
                 const out = (ot && rt) ? (toMin(rt) - toMin(ot)) : 0;
                 workMin = (eM - sM) - lunch - out;
             }
 
             const data = {
-                date: selectedDate, person: selectedPerson, startTime: st, endTime: et,
-                outTime: ot, returnTime: rt, lateMinutes: lateOrEarly, workMinutes: workMin,
-                notes: document.getElementById('notes').value
+                date: selectedDate, person: selectedPerson,
+                startTime: st, endTime: et, outTime: ot, returnTime: rt,
+                lateMinutes: lateOrEarlyTotal, // 지각 + 조퇴 합산값 저장
+                workMinutes: workMin, notes: document.getElementById('notes').value
             };
             db.ref(`attendance/${selectedPerson}/${selectedDate}`).set(data).then(() => alert('저장 완료!'));
         }
@@ -186,7 +200,9 @@
 
         function renderSummary() {
             const summary = {};
-            persons.forEach(p => { summary[p] = records.filter(r => r.person === p).reduce((acc, r) => acc + (r.lateMinutes || 0), 0); });
+            persons.forEach(p => { 
+                summary[p] = records.filter(r => r.person === p).reduce((acc, r) => acc + (r.lateMinutes || 0), 0); 
+            });
             document.getElementById('summaryCards').innerHTML = persons.map(p => `
                 <div class="summary-card ${filterPerson === p ? 'active' : ''}" onclick="toggleFilter('${p}')">
                     <h3>${p}</h3><div style="font-size:1.5em; font-weight:bold; color:#667eea;">${summary[p]}분</div><p>지각+조퇴 합계</p>
@@ -199,7 +215,9 @@
                 <tr class="record-row" onclick="editMode('${r.date}', '${r.person}')">
                     <td>${r.date}</td><td>${r.person}</td><td>${r.startTime||'-'}</td><td>${r.endTime||'-'}</td>
                     <td>${r.outTime||'-'}</td><td>${r.returnTime||'-'}</td>
-                    <td>${r.lateMinutes||0}분</td>
+                    <td style="color:${r.lateMinutes > 0 ? '#ff4757' : 'inherit'}; font-weight:${r.lateMinutes > 0 ? 'bold' : 'normal'};">
+                        ${r.lateMinutes||0}분
+                    </td>
                     <td>${r.workMinutes ? (r.workMinutes/60).toFixed(1) + 'h' : '-'}</td>
                     <td>${r.notes||''}</td>
                     <td><button class="btn-delete" onclick="event.stopPropagation(); deleteRecord('${r.date}', '${r.person}')">삭제</button></td>
