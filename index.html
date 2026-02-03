@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> 언제오시나? </title>
+    <title>SKE-0002 근태 관리 시스템 (지각+조퇴 합산)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        /* [디자인] 기존 보라색 테마 유지 및 가독성 개선 */
+        /* 기존 보라색 테마 디자인 유지 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
@@ -43,7 +43,7 @@
                 <button class="admin-btn" onclick="downloadExcel()">📥 엑셀 저장</button>
             </div>
             <h1>🕐 언제오시나?</h1>
-            <p>기록 클릭 시 수정 가능 | 카드 클릭 시 직원 필터링</p>
+            <p>8:30 출근 / 17:30 퇴근 기준 | 지각+조퇴 합산 관리</p>
         </div>
         <div class="main-content">
             <div class="section">
@@ -77,13 +77,13 @@
             </div>
 
             <div class="section" style="grid-column: 1 / -1;">
-                <h2>📊 실시간 통계 <span id="filterStatus" style="font-size: 0.6em; color: #ff4757; margin-left: 10px;"></span></h2>
+                <h2>📊 실시간 통계 (지각+조퇴 합계) <span id="filterStatus" style="font-size: 0.6em; color: #ff4757; margin-left: 10px;"></span></h2>
                 <div class="summary-cards" id="summaryCards"></div>
                 <h2>📝 근태 기록 목록</h2>
                 <table>
                     <thead>
                         <tr>
-                            <th>날짜</th><th>직원</th><th>출근</th><th>퇴근</th><th>외출</th><th>복귀</th><th>지각</th><th>실근무</th><th>비고</th><th>관리</th>
+                            <th>날짜</th><th>직원</th><th>출근</th><th>퇴근</th><th>외출</th><th>복귀</th><th>지각/조퇴</th><th>실근무</th><th>비고</th><th>관리</th>
                         </tr>
                     </thead>
                     <tbody id="recordsBody"></tbody>
@@ -93,7 +93,6 @@
     </div>
 
     <script>
-        // 1. Firebase 설정
         const firebaseConfig = {
             apiKey: "AIzaSyCkp4Odbptw0v9EdDqcVogv_pVoLNc2ef4",
             authDomain: "ske-0002.firebaseapp.com",
@@ -106,9 +105,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. 변수 초기화
-        let records = [], currentDate = new Date(), selectedDate = null, selectedPerson = '';
-        let filterPerson = ''; // 필터용 변수
+        let records = [], currentDate = new Date(), selectedDate = null, selectedPerson = '', filterPerson = '';
         const persons = ['박', '이', '1째', '2째', '송프리'];
 
         function toMin(t) { if(!t) return 0; const [h, m] = t.split(':').map(Number); return h * 60 + m; }
@@ -120,7 +117,6 @@
                 btn.onclick = () => { selectedPerson = p; updatePersonUI(); loadDetail(); };
                 ps.appendChild(btn);
             });
-
             db.ref('attendance').on('value', snap => {
                 const val = snap.val(); records = [];
                 if(val) Object.values(val).forEach(pData => Object.values(pData).forEach(r => records.push(r)));
@@ -130,27 +126,16 @@
         };
 
         function changeMonth(val) { currentDate.setMonth(currentDate.getMonth() + val); renderAll(); }
-
-        function updatePersonUI() {
-            document.querySelectorAll('.person-btn').forEach(b => b.classList.toggle('active', b.textContent === selectedPerson));
-        }
-
+        function updatePersonUI() { document.querySelectorAll('.person-btn').forEach(b => b.classList.toggle('active', b.textContent === selectedPerson)); }
         function renderAll() { renderCalendar(); renderSummary(); renderRecords(); }
 
-        // [핵심] 달력 로직 복구
         function renderCalendar() {
             const y = currentDate.getFullYear(), m = currentDate.getMonth();
             document.getElementById('currentMonthDisplay').textContent = `${y}년 ${m + 1}월`;
             const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
-            
-            const days = ['일','월','화','수','목','금','토'];
-            days.forEach(d => { const h = document.createElement('div'); h.style.textAlign='center'; h.style.fontWeight='bold'; h.textContent=d; grid.appendChild(h); });
-
-            const firstDay = new Date(y, m, 1).getDay();
-            const lastDate = new Date(y, m + 1, 0).getDate();
-
+            ['일','월','화','수','목','금','토'].forEach(d => { const h = document.createElement('div'); h.style.textAlign='center'; h.style.fontWeight='bold'; h.textContent=d; grid.appendChild(h); });
+            const firstDay = new Date(y, m, 1).getDay(), lastDate = new Date(y, m + 1, 0).getDate();
             for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
-
             for(let i=1; i<=lastDate; i++) {
                 const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
                 const day = document.createElement('div');
@@ -167,19 +152,32 @@
             const st = document.getElementById('startTime').value, et = document.getElementById('endTime').value;
             const ot = document.getElementById('outTime').value, rt = document.getElementById('returnTime').value;
 
-            let late = 0; if(st && toMin(st) > 510) late = toMin(st) - 510; // 8:30 기준
-
+            let late = 0; // 지각(오전)
+            let early = 0; // 조퇴(오후)
             let workMin = 0;
+
+            if(st) {
+                const sM = toMin(st);
+                if(sM > 510) late = sM - 510; // 8:30 기준
+            }
+
+            if(et) {
+                const eM = toMin(et);
+                if(eM < 1050) early = 1050 - eM; // 17:30 기준
+            }
+
             if(st && et) {
-                const total = toMin(et) - toMin(st);
+                const sM = toMin(st), eM = toMin(et);
+                let lunch = (eM >= 810) ? 60 : (eM > 750 ? eM - 750 : 0);
                 const out = (ot && rt) ? (toMin(rt) - toMin(ot)) : 0;
-                workMin = total - 60 - out; // 점심 60분 자동 차감
+                workMin = (eM - sM) - lunch - out;
             }
 
             const data = {
                 date: selectedDate, person: selectedPerson, startTime: st, endTime: et,
-                outTime: ot, returnTime: rt, lateMinutes: late, workMinutes: workMin,
-                notes: document.getElementById('notes').value
+                outTime: ot, returnTime: rt, 
+                lateMinutes: late + early, // 지각과 조퇴 합산 저장
+                workMinutes: workMin, notes: document.getElementById('notes').value
             };
             db.ref(`attendance/${selectedPerson}/${selectedDate}`).set(data).then(() => alert('저장 완료!'));
         }
@@ -193,7 +191,6 @@
             document.getElementById('notes').value = r?.notes || '';
         }
 
-        // [핵심] 필터링 및 삭제 버튼 복구
         function toggleFilter(p) {
             filterPerson = (filterPerson === p) ? '' : p;
             document.getElementById('filterStatus').textContent = filterPerson ? `(${filterPerson} 필터링 중)` : '';
@@ -208,17 +205,15 @@
 
         function renderSummary() {
             const summary = {};
-            persons.forEach(p => {
-                const pRecs = records.filter(r => r.person === p);
-                summary[p] = pRecs.reduce((acc, r) => acc + (r.lateMinutes || 0), 0);
+            persons.forEach(p => { 
+                summary[p] = records.filter(r => r.person === p).reduce((acc, r) => acc + (r.lateMinutes || 0), 0); 
             });
             document.getElementById('summaryCards').innerHTML = persons.map(p => `
                 <div class="summary-card ${filterPerson === p ? 'active' : ''}" onclick="toggleFilter('${p}')">
                     <h3>${p}</h3>
-                    <div style="font-size:1.5em; font-weight:bold;">${summary[p]}분</div>
-                    <p>지각 합계</p>
-                </div>
-            `).join('');
+                    <div style="font-size:1.5em; font-weight:bold; color:#667eea;">${summary[p]}분</div>
+                    <p>지각+조퇴 합계</p>
+                </div>`).join('');
         }
 
         function renderRecords() {
@@ -232,20 +227,17 @@
                     <td>${r.workMinutes ? (r.workMinutes/60).toFixed(1) + 'h' : '-'}</td>
                     <td>${r.notes||''}</td>
                     <td><button class="btn-delete" onclick="event.stopPropagation(); deleteRecord('${r.date}', '${r.person}')">삭제</button></td>
-                </tr>
-            `).join('');
+                </tr>`).join('');
         }
 
         function editMode(d, p) {
-            selectedDate = d; selectedPerson = p;
-            document.getElementById('selectedDate').value = d;
-            updatePersonUI(); loadDetail(); renderCalendar();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            selectedDate = d; selectedPerson = p; document.getElementById('selectedDate').value = d;
+            updatePersonUI(); loadDetail(); renderCalendar(); window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function downloadExcel() {
-            let csv = "\uFEFF날짜,직원,출근,퇴근,외출,복귀,지각(분),실근무(분),비고\n";
-            records.forEach(r => { csv += `${r.date},${r.person},${r.startTime},${r.endTime},${r.outTime},${r.returnTime},${r.lateMinutes},${r.workMinutes},${r.notes}\n`; });
+            let csv = "\uFEFF날짜,직원,출근,퇴근,외출,복귀,지각/조퇴(분),실근무(h),비고\n";
+            records.forEach(r => { csv += `${r.date},${r.person},${r.startTime},${r.endTime},${r.outTime},${r.returnTime},${r.lateMinutes},${(r.workMinutes/60).toFixed(1)},${r.notes}\n`; });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `근태기록.csv`; link.click();
         }
