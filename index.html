@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKE-0002 근태 관리 시스템 (지각+조퇴 합산)</title>
+    <title>SKE-0002 근태 관리 시스템 (최종)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        /* 기존 보라색 테마 디자인 유지 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
@@ -39,11 +38,9 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="admin-tools">
-                <button class="admin-btn" onclick="downloadExcel()">📥 엑셀 저장</button>
-            </div>
+            <div class="admin-tools"><button class="admin-btn" onclick="downloadExcel()">📥 엑셀 저장</button></div>
             <h1>🕐 언제오시나?</h1>
-            <p>8:30 출근 / 17:30 퇴근 기준 | 지각+조퇴 합산 관리</p>
+            <p>8:30 출근 / 17:30 퇴근 기준 | 지각 및 조퇴 합산 반영</p>
         </div>
         <div class="main-content">
             <div class="section">
@@ -55,12 +52,10 @@
                 </div>
                 <div id="calendarGrid" class="calendar-grid"></div>
             </div>
-
             <div class="section">
                 <h2>⏰ 정보 입력 / 수정</h2>
                 <div id="personSelect" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;"></div>
                 <div style="margin-top:15px;">선택 날짜: <input type="text" id="selectedDate" readonly style="border:none; font-weight:bold; color:#667eea; font-size:1.1em;"></div>
-                
                 <div style="margin-top:15px; border:1px dashed #667eea; padding:10px; border-radius:10px;">
                     <div style="display:flex; gap:10px;">
                         <div style="flex:1;">출근: <input type="time" id="startTime" style="width:100%; padding:8px;"></div>
@@ -71,20 +66,16 @@
                         <div style="flex:1;">복귀: <input type="time" id="returnTime" style="width:100%; padding:8px;"></div>
                     </div>
                 </div>
-
                 <div style="margin-top:15px;">비고: <textarea id="notes" style="width:100%; height:60px; padding:10px; border:1px solid #ddd; border-radius:5px;"></textarea></div>
                 <button class="btn-primary" id="saveBtn" style="margin-top:15px;">저장 / 수정하기</button>
             </div>
-
             <div class="section" style="grid-column: 1 / -1;">
                 <h2>📊 실시간 통계 (지각+조퇴 합계) <span id="filterStatus" style="font-size: 0.6em; color: #ff4757; margin-left: 10px;"></span></h2>
                 <div class="summary-cards" id="summaryCards"></div>
                 <h2>📝 근태 기록 목록</h2>
                 <table>
                     <thead>
-                        <tr>
-                            <th>날짜</th><th>직원</th><th>출근</th><th>퇴근</th><th>외출</th><th>복귀</th><th>지각/조퇴</th><th>실근무</th><th>비고</th><th>관리</th>
-                        </tr>
+                        <tr><th>날짜</th><th>직원</th><th>출근</th><th>퇴근</th><th>외출</th><th>복귀</th><th>지각/조퇴</th><th>실근무</th><th>비고</th><th>관리</th></tr>
                     </thead>
                     <tbody id="recordsBody"></tbody>
                 </table>
@@ -141,8 +132,7 @@
                 const day = document.createElement('div');
                 day.className = 'calendar-day' + (records.some(r => r.date === dStr) ? ' has-record' : '');
                 if(selectedDate === dStr) day.classList.add('selected');
-                day.textContent = i;
-                day.onclick = () => { selectedDate = dStr; document.getElementById('selectedDate').value = dStr; renderAll(); loadDetail(); };
+                day.textContent = i; day.onclick = () => { selectedDate = dStr; document.getElementById('selectedDate').value = dStr; renderAll(); loadDetail(); };
                 grid.appendChild(day);
             }
         }
@@ -152,20 +142,12 @@
             const st = document.getElementById('startTime').value, et = document.getElementById('endTime').value;
             const ot = document.getElementById('outTime').value, rt = document.getElementById('returnTime').value;
 
-            let late = 0; // 지각(오전)
-            let early = 0; // 조퇴(오후)
+            // 지각(08:30 이후) + 조퇴(17:30 이전) 계산
+            let lateOrEarly = 0;
+            if(st && toMin(st) > 510) lateOrEarly += (toMin(st) - 510);
+            if(et && toMin(et) < 1050) lateOrEarly += (1050 - toMin(et));
+
             let workMin = 0;
-
-            if(st) {
-                const sM = toMin(st);
-                if(sM > 510) late = sM - 510; // 8:30 기준
-            }
-
-            if(et) {
-                const eM = toMin(et);
-                if(eM < 1050) early = 1050 - eM; // 17:30 기준
-            }
-
             if(st && et) {
                 const sM = toMin(st), eM = toMin(et);
                 let lunch = (eM >= 810) ? 60 : (eM > 750 ? eM - 750 : 0);
@@ -175,9 +157,8 @@
 
             const data = {
                 date: selectedDate, person: selectedPerson, startTime: st, endTime: et,
-                outTime: ot, returnTime: rt, 
-                lateMinutes: late + early, // 지각과 조퇴 합산 저장
-                workMinutes: workMin, notes: document.getElementById('notes').value
+                outTime: ot, returnTime: rt, lateMinutes: lateOrEarly, workMinutes: workMin,
+                notes: document.getElementById('notes').value
             };
             db.ref(`attendance/${selectedPerson}/${selectedDate}`).set(data).then(() => alert('저장 완료!'));
         }
@@ -205,14 +186,10 @@
 
         function renderSummary() {
             const summary = {};
-            persons.forEach(p => { 
-                summary[p] = records.filter(r => r.person === p).reduce((acc, r) => acc + (r.lateMinutes || 0), 0); 
-            });
+            persons.forEach(p => { summary[p] = records.filter(r => r.person === p).reduce((acc, r) => acc + (r.lateMinutes || 0), 0); });
             document.getElementById('summaryCards').innerHTML = persons.map(p => `
                 <div class="summary-card ${filterPerson === p ? 'active' : ''}" onclick="toggleFilter('${p}')">
-                    <h3>${p}</h3>
-                    <div style="font-size:1.5em; font-weight:bold; color:#667eea;">${summary[p]}분</div>
-                    <p>지각+조퇴 합계</p>
+                    <h3>${p}</h3><div style="font-size:1.5em; font-weight:bold; color:#667eea;">${summary[p]}분</div><p>지각+조퇴 합계</p>
                 </div>`).join('');
         }
 
@@ -220,8 +197,7 @@
             const displayRecords = filterPerson ? records.filter(r => r.person === filterPerson) : records;
             document.getElementById('recordsBody').innerHTML = displayRecords.sort((a,b) => b.date.localeCompare(a.date)).map(r => `
                 <tr class="record-row" onclick="editMode('${r.date}', '${r.person}')">
-                    <td>${r.date}</td><td>${r.person}</td>
-                    <td>${r.startTime||'-'}</td><td>${r.endTime||'-'}</td>
+                    <td>${r.date}</td><td>${r.person}</td><td>${r.startTime||'-'}</td><td>${r.endTime||'-'}</td>
                     <td>${r.outTime||'-'}</td><td>${r.returnTime||'-'}</td>
                     <td>${r.lateMinutes||0}분</td>
                     <td>${r.workMinutes ? (r.workMinutes/60).toFixed(1) + 'h' : '-'}</td>
