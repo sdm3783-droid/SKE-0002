@@ -15,21 +15,26 @@
         .main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; padding: 25px; }
         .section { background: #f8f9fa; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .section h2 { color: #667eea; margin-bottom: 15px; font-size: 1.3em; border-bottom: 3px solid #667eea; padding-bottom: 8px; }
+        
+        /* 달력 스타일 복구 */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
         .calendar-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; background: white; font-weight: bold; font-size: 0.9em; }
         .calendar-day.selected { background: #667eea !important; color: white !important; }
         .calendar-day.has-record { background: #ffe0e0; border-color: #ff6b6b; }
-        .person-btn { padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; background: white; cursor: pointer; font-weight: 600; font-size: 0.9em; }
+        .calendar-day.sun { color: red; }
+        .calendar-day.sat { color: blue; }
+
+        .person-btn { padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; background: white; cursor: pointer; font-weight: 600; }
         .person-btn.active { background: #667eea; color: white; }
         .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 15px; }
         .summary-card { background: white; padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; }
         .summary-card.active { background: #667eea; color: white; }
+        .chart-container { background: white; padding: 15px; border-radius: 15px; height: 220px; margin-bottom: 20px; }
         .btn-primary { background: #667eea; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; background: white; margin-top: 15px; }
         th, td { padding: 10px; border-bottom: 1px solid #e0e0e0; text-align: left; font-size: 0.85em; }
         th { background: #667eea; color: white; }
-        /* 그래프 크기 조절 */
-        .chart-container { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); height: 220px; margin-bottom: 20px; }
         .btn-delete { background: #ff4757; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
@@ -37,18 +42,22 @@
     <div class="container">
         <div class="header">
             <h1>🕐 언제오시나?</h1>
-            <p>8:30 출근 / 17:30 퇴근 / 점심시간(12:30~13:30) 자동 공제</p>
+            <p>8:30 출근 / 17:30 퇴근 / 점심시간(12:30~13:30) 자동 제외</p>
         </div>
         <div class="main-content">
             <div class="section">
-                <h2>📅 날짜 선택</h2>
+                <div class="calendar-header">
+                    <button onclick="changeMonth(-1)" style="padding:5px 10px;">◀ 이전</button>
+                    <h2 id="currentMonthDisplay" style="border:none; margin:0;"></h2>
+                    <button onclick="changeMonth(1)" style="padding:5px 10px;">다음 ▶</button>
+                </div>
                 <div id="calendarGrid" class="calendar-grid"></div>
             </div>
 
             <div class="section">
                 <h2>⏰ 정보 입력 / 수정</h2>
                 <div id="personSelect" style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;"></div>
-                <div style="margin-top:12px;">선택 날짜: <input type="text" id="selectedDate" readonly style="border:none; font-weight:bold; color:#667eea;"></div>
+                <div style="margin-top:12px;">선택 날짜: <input type="text" id="selectedDate" readonly style="border:none; font-weight:bold; color:#667eea; font-size:1.1em;"></div>
                 <div style="margin-top:12px; border:1px dashed #667eea; padding:10px; border-radius:10px;">
                     <div style="display:flex; gap:10px;">
                         <div style="flex:1;">출근: <input type="time" id="startTime" style="width:100%; padding:6px;"></div>
@@ -94,7 +103,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let records = [], selectedDate = null, selectedPerson = '', filterPerson = '', myChart = null;
+        let records = [], currentDate = new Date(), selectedDate = null, selectedPerson = '', filterPerson = '', myChart = null;
         const persons = ['박', '이', '1째', '2째', '송프리'];
 
         function toMin(t) { if(!t) return 0; const [h, m] = t.split(':').map(Number); return h * 60 + m; }
@@ -114,15 +123,55 @@
             document.getElementById('saveBtn').onclick = saveRecord;
         };
 
-        function updatePersonUI() { document.querySelectorAll('.person-btn').forEach(b => b.classList.toggle('active', b.textContent === selectedPerson)); }
+        function changeMonth(step) {
+            currentDate.setMonth(currentDate.getMonth() + step);
+            renderAll();
+        }
 
-        function renderAll() { renderSummary(); renderRecords(); renderCalendar(); }
+        function updatePersonUI() {
+            document.querySelectorAll('.person-btn').forEach(b => b.classList.toggle('active', b.textContent === selectedPerson));
+        }
+
+        function renderAll() { renderCalendar(); renderSummary(); renderRecords(); }
+
+        function renderCalendar() {
+            const y = currentDate.getFullYear(), m = currentDate.getMonth();
+            document.getElementById('currentMonthDisplay').textContent = `${y}년 ${m + 1}월`;
+            const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
+            
+            ['일','월','화','수','목','금','토'].forEach(d => {
+                const h = document.createElement('div'); h.style.textAlign='center'; h.style.fontWeight='bold'; h.textContent=d; grid.appendChild(h);
+            });
+
+            const firstDay = new Date(y, m, 1).getDay();
+            const lastDate = new Date(y, m + 1, 0).getDate();
+
+            for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
+
+            for(let i=1; i<=lastDate; i++) {
+                const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+                const day = document.createElement('div');
+                day.className = 'calendar-day' + (records.some(r => r.date === dStr) ? ' has-record' : '');
+                const dayOfWeek = new Date(y, m, i).getDay();
+                if(dayOfWeek === 0) day.classList.add('sun');
+                if(dayOfWeek === 6) day.classList.add('sat');
+                if(selectedDate === dStr) day.classList.add('selected');
+                
+                day.textContent = i;
+                day.onclick = () => { 
+                    selectedDate = dStr; 
+                    document.getElementById('selectedDate').value = dStr; 
+                    renderAll(); loadDetail(); 
+                };
+                grid.appendChild(day);
+            }
+        }
 
         function saveRecord() {
             if(!selectedDate || !selectedPerson) return alert('직원과 날짜를 선택하세요!');
             const st = document.getElementById('startTime').value, et = document.getElementById('endTime').value;
             const ot = document.getElementById('outTime').value, rt = document.getElementById('returnTime').value;
-            const notes = document.getElementById('notes').value;
+            const nt = document.getElementById('notes').value;
 
             let missing = 0;
             if(st && toMin(st) > 510) missing += (toMin(st) - 510);
@@ -136,7 +185,7 @@
 
             db.ref(`attendance/${selectedPerson}/${selectedDate}`).set({
                 date: selectedDate, person: selectedPerson, startTime: st, endTime: et,
-                outTime: ot, returnTime: rt, lateMinutes: missing, notes: notes
+                outTime: ot, returnTime: rt, lateMinutes: missing, notes: nt
             }).then(() => alert('저장 완료!'));
         }
 
@@ -169,18 +218,6 @@
                     <td>${r.notes||''}</td>
                     <td><button class="btn-delete" onclick="event.stopPropagation(); deleteRec('${r.date}','${r.person}')">삭제</button></td>
                 </tr>`).join('');
-        }
-
-        function renderCalendar() {
-            const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
-            for(let i=1; i<=31; i++) {
-                const d = `2026-02-${String(i).padStart(2,'0')}`;
-                const div = document.createElement('div'); div.className = 'calendar-day' + (records.some(r=>r.date===d)?' has-record':'');
-                if(selectedDate === d) div.classList.add('selected');
-                div.textContent = i;
-                div.onclick = () => { selectedDate = d; document.getElementById('selectedDate').value = d; renderAll(); loadDetail(); };
-                grid.appendChild(div);
-            }
         }
 
         function loadDetail() {
