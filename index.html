@@ -8,18 +8,15 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        /* 기본 레이아웃 리셋 */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 10px; }
-        
+
         .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 10px; text-align: center; }
         .header h1 { font-size: 1.3rem; margin-bottom: 5px; }
         .header p { font-size: 0.8rem; opacity: 0.9; }
 
-        /* [핵심] 반응형 레이아웃: 모바일은 1열, PC(900px 이상)는 2열 */
         .main-content { display: flex; flex-direction: column; gap: 15px; padding: 15px; }
-        
         @media (min-width: 900px) {
             .main-content { display: grid; grid-template-columns: 1fr 1fr; }
             .full-width { grid-column: 1 / -1; }
@@ -28,43 +25,55 @@
         .section { background: #fdfdfd; padding: 15px; border-radius: 12px; border: 1px solid #eee; }
         .section h2 { color: #667eea; margin-bottom: 12px; font-size: 1.1rem; border-left: 4px solid #667eea; padding-left: 8px; }
 
-        /* 달력 최적화 */
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .calendar-header button { padding: 5px 10px; background: #667eea; color: white; border: none; border-radius: 5px; font-size: 0.8rem; }
+        .calendar-header button { padding: 5px 10px; background: #667eea; color: white; border: none; border-radius: 5px; font-size: 0.8rem; cursor: pointer; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
         .calendar-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 1px solid #f0f0f0; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; background: white; }
+        .calendar-day:hover { background: #f0f4ff; }
         .calendar-day.selected { background: #667eea !important; color: white !important; }
         .calendar-day.has-record { border-color: #ff6b6b; color: #ff6b6b; font-weight: bold; }
         .calendar-day.sun { color: #ff4757; }
         .calendar-day.sat { color: #3182ce; }
 
-        /* 입력 폼 */
         .person-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
-        .person-btn { padding: 10px 5px; border: 1px solid #ddd; border-radius: 5px; background: white; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
+        .person-btn { padding: 10px 5px; border: 1px solid #ddd; border-radius: 5px; background: white; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: background 0.15s; }
+        .person-btn:hover { background: #f0f4ff; }
         .person-btn.active { background: #667eea; color: white; border-color: #667eea; }
-        
+
         .time-box { border: 1px dashed #667eea; padding: 10px; border-radius: 10px; background: #f9faff; margin-bottom: 10px; }
         .time-row { display: flex; gap: 5px; margin-bottom: 5px; }
         .time-input-group { flex: 1; }
         .time-input-group label { display: block; font-size: 0.7rem; margin-bottom: 2px; color: #666; }
         .time-input-group input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.85rem; }
 
-        textarea { width: 100%; border: 1px solid #ccc; border-radius: 5px; padding: 6px; font-size: 0.85rem; }
-        .btn-save { background: #667eea; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
+        textarea { width: 100%; border: 1px solid #ccc; border-radius: 5px; padding: 6px; font-size: 0.85rem; resize: vertical; }
+        .btn-save { background: #667eea; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; font-size: 1rem; transition: background 0.15s; }
+        .btn-save:hover { background: #5568d3; }
 
-        /* 통계 및 차트 */
+        /* 저장 성공 토스트 메시지 */
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(60px); background: #323232; color: white; padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; opacity: 0; transition: all 0.3s ease; z-index: 9999; pointer-events: none; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
         .chart-container { height: 180px; margin-bottom: 10px; }
         .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 5px; }
-        .summary-card { background: white; padding: 8px; border-radius: 8px; border: 1px solid #eee; text-align: center; font-size: 0.8rem; cursor: pointer; }
+        .summary-card { background: white; padding: 8px; border-radius: 8px; border: 1px solid #eee; text-align: center; font-size: 0.8rem; cursor: pointer; transition: background 0.15s; }
+        .summary-card:hover { background: #f0f4ff; }
         .summary-card.active { border-color: #667eea; background: #f0f4ff; }
         .summary-card div { font-weight: bold; color: #667eea; }
 
-        /* 테이블 스크롤 보장 */
         .table-scroll { width: 100%; overflow-x: auto; margin-top: 10px; border-radius: 8px; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; font-size: 0.75rem; }
         th { background: #f4f4f4; color: #666; }
+        tbody tr { cursor: pointer; transition: background 0.1s; }
+        tbody tr:hover { background: #f9faff; }
         .late-text { color: #ff4757; font-weight: bold; }
+        .btn-del { background: #ff4757; color: white; border: none; border-radius: 3px; padding: 3px 6px; cursor: pointer; font-size: 0.75rem; }
+        .btn-del:hover { background: #e0001a; }
+
+        /* 유효성 검사 에러 표시 */
+        .input-error { border-color: #ff4757 !important; }
+        .error-msg { color: #ff4757; font-size: 0.72rem; margin-top: 3px; }
     </style>
 </head>
 <body>
@@ -73,46 +82,68 @@
             <h1>🕐 언제오시나?</h1>
             <p>8:30 출근 / 17:30 퇴근 / 점심시간(12:30~13:30) 자동 제외</p>
         </div>
-        
+
         <div class="main-content">
-            <div class="section">
+            <div class="section" role="region" aria-label="달력">
                 <div class="calendar-header">
-                    <button onclick="changeMonth(-1)">◀ 이전</button>
-                    <h2 id="monthLabel" style="border:none; margin:0; font-size:1rem;"></h2>
-                    <button onclick="changeMonth(1)">다음 ▶</button>
+                    <button onclick="changeMonth(-1)" aria-label="이전 달">◀ 이전</button>
+                    <h2 id="monthLabel" style="border:none; margin:0; font-size:1rem;" aria-live="polite"></h2>
+                    <button onclick="changeMonth(1)" aria-label="다음 달">다음 ▶</button>
                 </div>
-                <div id="calendarGrid" class="calendar-grid"></div>
+                <div id="calendarGrid" class="calendar-grid" role="grid" aria-label="날짜 선택"></div>
             </div>
 
-            <div class="section">
+            <div class="section" role="region" aria-label="근태 입력">
                 <h2>⏰ 정보 입력</h2>
-                <div id="personList" class="person-grid"></div>
-                <div style="margin-bottom:8px; font-size:0.85rem;">날짜: <span id="viewDate" style="font-weight:bold; color:#667eea;">날짜 선택</span></div>
-                
+                <div id="personList" class="person-grid" role="group" aria-label="직원 선택"></div>
+                <div style="margin-bottom:8px; font-size:0.85rem;">
+                    날짜: <span id="viewDate" style="font-weight:bold; color:#667eea;" aria-live="polite">날짜 선택</span>
+                </div>
+
                 <div class="time-box">
                     <div class="time-row">
-                        <div class="time-input-group"><label>출근</label><input type="time" id="st"></div>
-                        <div class="time-input-group"><label>퇴근</label><input type="time" id="et"></div>
+                        <div class="time-input-group">
+                            <label for="st">출근</label>
+                            <input type="time" id="st" aria-label="출근 시간">
+                        </div>
+                        <div class="time-input-group">
+                            <label for="et">퇴근</label>
+                            <input type="time" id="et" aria-label="퇴근 시간">
+                        </div>
                     </div>
                     <div class="time-row">
-                        <div class="time-input-group"><label>외출</label><input type="time" id="ot"></div>
-                        <div class="time-input-group"><label>복귀</label><input type="time" id="rt"></div>
+                        <div class="time-input-group">
+                            <label for="ot">외출</label>
+                            <input type="time" id="ot" aria-label="외출 시간">
+                        </div>
+                        <div class="time-input-group">
+                            <label for="rt">복귀</label>
+                            <input type="time" id="rt" aria-label="복귀 시간">
+                        </div>
                     </div>
+                    <div id="timeError" class="error-msg" role="alert" aria-live="assertive"></div>
                 </div>
-                <div><label style="font-size:0.75rem; color:#666;">비고</label><textarea id="memo" rows="2"></textarea></div>
-                <button class="btn-save" onclick="doSave()">저장하기</button>
+                <div>
+                    <label for="memo" style="font-size:0.75rem; color:#666;">비고</label>
+                    <textarea id="memo" rows="2" aria-label="비고"></textarea>
+                </div>
+                <button class="btn-save" onclick="doSave()" aria-label="저장하기">저장하기</button>
             </div>
 
-            <div class="section full-width">
+            <div class="section full-width" role="region" aria-label="통계 및 기록">
                 <h2>📊 인원별 이탈 시간 (분)</h2>
-                <div class="chart-container"><canvas id="barChart"></canvas></div>
-                <div id="summaryBox" class="summary-grid"></div>
-                
-                <h2 style="margin-top:15px;">📝 기록 목록 <span id="curFilter" style="font-size:0.7rem; color:#ff4757;"></span></h2>
+                <div class="chart-container"><canvas id="barChart" role="img" aria-label="인원별 이탈 시간 막대 그래프"></canvas></div>
+                <div id="summaryBox" class="summary-grid" role="group" aria-label="직원별 이탈 시간 필터"></div>
+
+                <h2 style="margin-top:15px;">📝 기록 목록 <span id="curFilter" style="font-size:0.7rem; color:#ff4757;" aria-live="polite"></span></h2>
                 <div class="table-scroll">
-                    <table>
+                    <table role="table" aria-label="근태 기록">
                         <thead>
-                            <tr><th>날짜</th><th>직원</th><th>출근</th><th>퇴근</th><th>외출</th><th>복귀</th><th>지각/조퇴/외출</th><th>비고</th><th>삭제</th></tr>
+                            <tr>
+                                <th scope="col">날짜</th><th scope="col">직원</th><th scope="col">출근</th>
+                                <th scope="col">퇴근</th><th scope="col">외출</th><th scope="col">복귀</th>
+                                <th scope="col">지각/조퇴/외출</th><th scope="col">비고</th><th scope="col">삭제</th>
+                            </tr>
                         </thead>
                         <tbody id="listBody"></tbody>
                     </table>
@@ -121,7 +152,15 @@
         </div>
     </div>
 
+    <!-- 토스트 알림 -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
     <script>
+        // ──────────────────────────────────────────────────
+        // Firebase 설정
+        // 보안: Firebase Console > Realtime Database > Rules 에서
+        // 인증된 사용자만 읽기/쓰기 가능하도록 제한 권장
+        // ──────────────────────────────────────────────────
         const firebaseConfig = {
             apiKey: "AIzaSyCkp4Odbptw0v9EdDqcVogv_pVoLNc2ef4",
             authDomain: "ske-0002.firebaseapp.com",
@@ -134,103 +173,378 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let allRecords = [], curDate = new Date(), selDate = null, selPerson = '', filterName = '', chartObj = null;
-        const users = ['박', '이', '1째', '2째', '송프리'];
-        const t2m = (t) => { if(!t) return 0; const [h,m] = t.split(':').map(Number); return h*60+m; };
+        // ──────────────────────────────────────────────────
+        // 상태 변수
+        // ──────────────────────────────────────────────────
+        let allRecords = [];
+        let curDate = new Date();
+        let selDate = null;
+        let selPerson = '';
+        let filterName = '';
+        let chartObj = null;
+        let dbListener = null;
 
-        window.onload = () => {
+        const users = ['박', '이', '1째', '2째', '송프리'];
+
+        // ──────────────────────────────────────────────────
+        // 유틸리티
+        // ──────────────────────────────────────────────────
+
+        // 시간 문자열(HH:MM)을 분 단위 정수로 변환
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        }
+
+        // XSS 방지: 사용자 입력 데이터를 HTML에 삽입하기 전 이스케이프
+        function escHtml(str) {
+            if (str == null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // 토스트 메시지 표시 (alert 대신 사용)
+        function showToast(msg, duration = 2000) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), duration);
+        }
+
+        // ──────────────────────────────────────────────────
+        // 초기화
+        // ──────────────────────────────────────────────────
+        window.addEventListener('load', () => {
             const list = document.getElementById('personList');
             users.forEach(u => {
-                const b = document.createElement('button'); b.className='person-btn'; b.textContent=u;
-                b.onclick = () => { selPerson = u; updateUI(); loadDetail(); };
-                list.appendChild(b);
+                const btn = document.createElement('button');
+                btn.className = 'person-btn';
+                btn.textContent = u;
+                btn.setAttribute('aria-pressed', 'false');
+                btn.addEventListener('click', () => {
+                    selPerson = u;
+                    updatePersonUI();
+                    loadDetail();
+                });
+                list.appendChild(btn);
             });
-            db.ref('attendance').on('value', snap => {
-                const v = snap.val(); allRecords = [];
-                if(v) Object.values(v).forEach(pData => Object.values(pData).forEach(r => allRecords.push(r)));
+
+            // Firebase 실시간 리스너 등록 (참조 저장 → unload 시 해제)
+            const ref = db.ref('attendance');
+            dbListener = ref.on('value', snap => {
+                const val = snap.val();
+                allRecords = [];
+                if (val) {
+                    Object.values(val).forEach(personData =>
+                        Object.values(personData).forEach(record => allRecords.push(record))
+                    );
+                }
                 refresh();
             });
-        };
 
-        function updateUI() { document.querySelectorAll('.person-btn').forEach(b => b.classList.toggle('active', b.textContent === selPerson)); }
-        function refresh() { renderCal(); renderStats(); renderTable(); }
-        function changeMonth(n) { curDate.setMonth(curDate.getMonth() + n); refresh(); }
+            // 테이블 이벤트 위임 (XSS 방지: onclick 인라인 제거)
+            document.getElementById('listBody').addEventListener('click', handleTableClick);
+        });
 
-        function renderCal() {
-            const y = curDate.getFullYear(), m = curDate.getMonth();
-            document.getElementById('monthLabel').textContent = `${y}년 ${m+1}월`;
-            const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
-            ['일','월','화','수','목','금','토'].forEach(d => {
-                const h = document.createElement('div'); h.style.textAlign='center'; h.style.fontSize='0.7rem'; h.style.color='#999'; h.textContent=d; grid.appendChild(h);
+        // 페이지 이탈 시 Firebase 리스너 해제 (메모리 누수 방지)
+        window.addEventListener('beforeunload', () => {
+            if (dbListener) db.ref('attendance').off('value', dbListener);
+        });
+
+        // ──────────────────────────────────────────────────
+        // UI 업데이트
+        // ──────────────────────────────────────────────────
+        function updatePersonUI() {
+            document.querySelectorAll('.person-btn').forEach(btn => {
+                const active = btn.textContent === selPerson;
+                btn.classList.toggle('active', active);
+                btn.setAttribute('aria-pressed', String(active));
             });
-            const first = new Date(y, m, 1).getDay(), last = new Date(y, m+1, 0).getDate();
-            for(let i=0; i<first; i++) grid.appendChild(document.createElement('div'));
-            for(let i=1; i<=last; i++) {
-                const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-                const day = document.createElement('div');
-                day.className = 'calendar-day' + (allRecords.some(r => r.date === ds) ? ' has-record' : '');
-                const dow = new Date(y, m, i).getDay();
-                if(dow === 0) day.classList.add('sun'); if(dow === 6) day.classList.add('sat');
-                if(selDate === ds) day.classList.add('selected');
-                day.textContent = i;
-                day.onclick = () => { selDate = ds; document.getElementById('viewDate').textContent = ds; refresh(); loadDetail(); };
-                grid.appendChild(day);
+        }
+
+        function refresh() {
+            renderCalendar();
+            renderStats();
+            renderTable();
+        }
+
+        function changeMonth(delta) {
+            curDate = new Date(curDate.getFullYear(), curDate.getMonth() + delta, 1);
+            refresh();
+        }
+
+        // ──────────────────────────────────────────────────
+        // 달력 렌더링
+        // ──────────────────────────────────────────────────
+        function renderCalendar() {
+            const y = curDate.getFullYear();
+            const m = curDate.getMonth();
+            document.getElementById('monthLabel').textContent = `${y}년 ${m + 1}월`;
+
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            ['일', '월', '화', '수', '목', '금', '토'].forEach(d => {
+                const header = document.createElement('div');
+                header.style.cssText = 'text-align:center; font-size:0.7rem; color:#999;';
+                header.textContent = d;
+                header.setAttribute('role', 'columnheader');
+                grid.appendChild(header);
+            });
+
+            const firstDow = new Date(y, m, 1).getDay();
+            const lastDay = new Date(y, m + 1, 0).getDate();
+
+            for (let i = 0; i < firstDow; i++) {
+                grid.appendChild(document.createElement('div'));
+            }
+
+            for (let day = 1; day <= lastDay; day++) {
+                const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const hasRecord = allRecords.some(r => r.date === dateStr);
+                const dow = new Date(y, m, day).getDay();
+
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day';
+                if (hasRecord) cell.classList.add('has-record');
+                if (dow === 0) cell.classList.add('sun');
+                if (dow === 6) cell.classList.add('sat');
+                if (selDate === dateStr) cell.classList.add('selected');
+                cell.textContent = day;
+                cell.setAttribute('role', 'gridcell');
+                cell.setAttribute('aria-label', `${m + 1}월 ${day}일${hasRecord ? ' (기록 있음)' : ''}`);
+                cell.setAttribute('tabindex', '0');
+
+                cell.addEventListener('click', () => selectDate(dateStr));
+                cell.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') selectDate(dateStr); });
+
+                grid.appendChild(cell);
             }
         }
 
+        function selectDate(dateStr) {
+            selDate = dateStr;
+            document.getElementById('viewDate').textContent = dateStr;
+            refresh();
+            loadDetail();
+        }
+
+        // ──────────────────────────────────────────────────
+        // 저장
+        // ──────────────────────────────────────────────────
         function doSave() {
-            if(!selDate || !selPerson) return alert('날짜와 직원을 선택하세요!');
-            const s = document.getElementById('st').value, e = document.getElementById('et').value;
-            const o = document.getElementById('ot').value, r = document.getElementById('rt').value;
-            
-            let miss = 0;
-            if(s && t2m(s) > 510) miss += (t2m(s)-510);
-            if(e && t2m(e) < 1050) miss += (1050-t2m(e));
-            if(o && r) {
-                const oM = t2m(o), rM = t2m(r);
-                const overlap = Math.max(0, Math.min(rM, 810) - Math.max(oM, 750)); // 점심시간(12:30~13:30) 중복 계산
-                miss += ((rM - oM) - overlap);
+            if (!selDate || !selPerson) {
+                showToast('날짜와 직원을 선택하세요!');
+                return;
             }
-            db.ref(`attendance/${selPerson}/${selDate}`).set({
-                date: selDate, person: selPerson, startTime: s, endTime: e, outTime: o, returnTime: r, lateMinutes: miss, notes: document.getElementById('memo').value
-            }).then(() => alert('저장되었습니다.'));
-        }
 
-        function renderStats() {
-            const scores = users.map(u => allRecords.filter(r => r.person === u).reduce((a,c) => a+(c.lateMinutes||0), 0));
-            document.getElementById('summaryBox').innerHTML = users.map((u, i) => `
-                <div class="summary-card ${filterName === u ? 'active' : ''}" onclick="setFilter('${u}')">
-                    <h3>${u}</h3><div>${scores[i]}분</div>
-                </div>`).join('');
-            const ctx = document.getElementById('barChart').getContext('2d');
-            if(chartObj) chartObj.destroy();
-            chartObj = new Chart(ctx, {
-                type: 'bar', data: { labels: users, datasets: [{ data: scores, backgroundColor: '#667eea', borderRadius: 5 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            const s = document.getElementById('st').value;
+            const e = document.getElementById('et').value;
+            const o = document.getElementById('ot').value;
+            const r = document.getElementById('rt').value;
+            const errEl = document.getElementById('timeError');
+
+            // 입력 유효성 검사
+            errEl.textContent = '';
+            ['st', 'et', 'ot', 'rt'].forEach(id => document.getElementById(id).classList.remove('input-error'));
+
+            if (s && e && timeToMinutes(s) >= timeToMinutes(e)) {
+                document.getElementById('st').classList.add('input-error');
+                document.getElementById('et').classList.add('input-error');
+                errEl.textContent = '퇴근 시간이 출근 시간보다 빠를 수 없습니다.';
+                return;
+            }
+            if (o && !r) {
+                document.getElementById('rt').classList.add('input-error');
+                errEl.textContent = '외출 시간 입력 시 복귀 시간도 입력해야 합니다.';
+                return;
+            }
+            if (!o && r) {
+                document.getElementById('ot').classList.add('input-error');
+                errEl.textContent = '복귀 시간 입력 시 외출 시간도 입력해야 합니다.';
+                return;
+            }
+            if (o && r && timeToMinutes(o) >= timeToMinutes(r)) {
+                document.getElementById('ot').classList.add('input-error');
+                document.getElementById('rt').classList.add('input-error');
+                errEl.textContent = '복귀 시간이 외출 시간보다 빠를 수 없습니다.';
+                return;
+            }
+
+            // 이탈 시간 계산
+            let missMinutes = 0;
+            if (s && timeToMinutes(s) > 510) missMinutes += (timeToMinutes(s) - 510);
+            if (e && timeToMinutes(e) < 1050) missMinutes += (1050 - timeToMinutes(e));
+            if (o && r) {
+                const oMin = timeToMinutes(o), rMin = timeToMinutes(r);
+                const lunchOverlap = Math.max(0, Math.min(rMin, 810) - Math.max(oMin, 750));
+                missMinutes += (rMin - oMin) - lunchOverlap;
+            }
+
+            db.ref(`attendance/${selPerson}/${selDate}`).set({
+                date: selDate,
+                person: selPerson,
+                startTime: s,
+                endTime: e,
+                outTime: o,
+                returnTime: r,
+                lateMinutes: missMinutes,
+                notes: document.getElementById('memo').value
+            }).then(() => {
+                showToast('저장되었습니다.');
+                resetForm();
+            }).catch(() => {
+                showToast('저장 중 오류가 발생했습니다. 다시 시도해주세요.');
             });
         }
 
-        function setFilter(u) { filterName = (filterName === u) ? '' : u; document.getElementById('curFilter').textContent = filterName ? `(${filterName} 필터 중)` : ''; renderTable(); }
+        // 저장 후 입력 폼 초기화
+        function resetForm() {
+            ['st', 'et', 'ot', 'rt'].forEach(id => {
+                const el = document.getElementById(id);
+                el.value = '';
+                el.classList.remove('input-error');
+            });
+            document.getElementById('memo').value = '';
+            document.getElementById('timeError').textContent = '';
+            selDate = null;
+            selPerson = '';
+            document.getElementById('viewDate').textContent = '날짜 선택';
+            updatePersonUI();
+            refresh();
+        }
 
+        // ──────────────────────────────────────────────────
+        // 통계 렌더링
+        // ──────────────────────────────────────────────────
+        function renderStats() {
+            const scores = users.map(u =>
+                allRecords.filter(r => r.person === u).reduce((acc, cur) => acc + (cur.lateMinutes || 0), 0)
+            );
+
+            const summaryBox = document.getElementById('summaryBox');
+            summaryBox.innerHTML = '';
+            users.forEach((u, i) => {
+                const card = document.createElement('div');
+                card.className = 'summary-card' + (filterName === u ? ' active' : '');
+                card.setAttribute('role', 'button');
+                card.setAttribute('tabindex', '0');
+                card.setAttribute('aria-pressed', String(filterName === u));
+                card.setAttribute('aria-label', `${u} ${scores[i]}분 필터`);
+
+                const name = document.createElement('h3');
+                name.textContent = u;
+                const score = document.createElement('div');
+                score.textContent = `${scores[i]}분`;
+
+                card.appendChild(name);
+                card.appendChild(score);
+                card.addEventListener('click', () => setFilter(u));
+                card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') setFilter(u); });
+                summaryBox.appendChild(card);
+            });
+
+            const ctx = document.getElementById('barChart').getContext('2d');
+            if (chartObj) chartObj.destroy();
+            chartObj = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: users,
+                    datasets: [{ data: scores, backgroundColor: '#667eea', borderRadius: 5 }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function setFilter(name) {
+            filterName = (filterName === name) ? '' : name;
+            document.getElementById('curFilter').textContent = filterName ? `(${filterName} 필터 중)` : '';
+            renderStats();
+            renderTable();
+        }
+
+        // ──────────────────────────────────────────────────
+        // 기록 목록 렌더링 (XSS 방지: 이스케이프 적용)
+        // ──────────────────────────────────────────────────
         function renderTable() {
-            const target = filterName ? allRecords.filter(r => r.person === filterName) : allRecords;
-            document.getElementById('listBody').innerHTML = target.sort((a,b) => b.date.localeCompare(a.date)).map(r => `
-                <tr onclick="goEdit('${r.date}','${r.person}')">
-                    <td>${r.date}</td><td>${r.person}</td><td>${r.startTime||'-'}</td><td>${r.endTime||'-'}</td>
-                    <td>${r.outTime||'-'}</td><td>${r.returnTime||'-'}</td>
-                    <td class="late-text">${r.lateMinutes||0}분</td><td>${r.notes||''}</td>
-                    <td><button onclick="event.stopPropagation(); doDel('${r.date}','${r.person}')" style="background:#ff4757; color:white; border:none; border-radius:3px; padding:3px 6px;">삭제</button></td>
-                </tr>`).join('');
+            const target = filterName
+                ? allRecords.filter(r => r.person === filterName)
+                : allRecords;
+
+            const sorted = target.slice().sort((a, b) => b.date.localeCompare(a.date));
+            const tbody = document.getElementById('listBody');
+            tbody.innerHTML = '';
+
+            sorted.forEach(r => {
+                const tr = document.createElement('tr');
+                // data 속성으로 날짜/직원 저장 (onclick 인라인 제거 → XSS 방지)
+                tr.dataset.date = r.date;
+                tr.dataset.person = r.person;
+
+                const lateClass = (r.lateMinutes || 0) > 0 ? ' class="late-text"' : '';
+                tr.innerHTML = `
+                    <td>${escHtml(r.date)}</td>
+                    <td>${escHtml(r.person)}</td>
+                    <td>${escHtml(r.startTime) || '-'}</td>
+                    <td>${escHtml(r.endTime) || '-'}</td>
+                    <td>${escHtml(r.outTime) || '-'}</td>
+                    <td>${escHtml(r.returnTime) || '-'}</td>
+                    <td${lateClass}>${r.lateMinutes || 0}분</td>
+                    <td>${escHtml(r.notes)}</td>
+                    <td><button class="btn-del" data-date="${escHtml(r.date)}" data-person="${escHtml(r.person)}" aria-label="${escHtml(r.date)} ${escHtml(r.person)} 기록 삭제">삭제</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
-        function goEdit(d, p) { selDate = d; selPerson = p; document.getElementById('viewDate').textContent = d; updateUI(); loadDetail(); refresh(); }
-        function loadDetail() {
-            const r = allRecords.find(x => x.date === selDate && x.person === selPerson);
-            document.getElementById('st').value = r?.startTime || ''; document.getElementById('et').value = r?.endTime || '';
-            document.getElementById('ot').value = r?.outTime || ''; document.getElementById('rt').value = r?.returnTime || '';
-            document.getElementById('memo').value = r?.notes || '';
+        // 테이블 이벤트 위임 처리
+        function handleTableClick(e) {
+            const delBtn = e.target.closest('.btn-del');
+            if (delBtn) {
+                e.stopPropagation();
+                const { date, person } = delBtn.dataset;
+                if (confirm(`[${person}] ${date} 기록을 삭제하시겠습니까?`)) {
+                    db.ref(`attendance/${person}/${date}`).remove()
+                        .then(() => showToast('삭제되었습니다.'))
+                        .catch(() => showToast('삭제 중 오류가 발생했습니다.'));
+                }
+                return;
+            }
+
+            const row = e.target.closest('tr');
+            if (row && row.dataset.date) {
+                selDate = row.dataset.date;
+                selPerson = row.dataset.person;
+                document.getElementById('viewDate').textContent = selDate;
+                updatePersonUI();
+                loadDetail();
+                refresh();
+            }
         }
-        function doDel(d, p) { if(confirm('삭제하시겠습니까?')) db.ref(`attendance/${p}/${d}`).remove(); }
+
+        // ──────────────────────────────────────────────────
+        // 상세 데이터 로드
+        // ──────────────────────────────────────────────────
+        function loadDetail() {
+            const record = allRecords.find(x => x.date === selDate && x.person === selPerson);
+            document.getElementById('st').value = record?.startTime || '';
+            document.getElementById('et').value = record?.endTime || '';
+            document.getElementById('ot').value = record?.outTime || '';
+            document.getElementById('rt').value = record?.returnTime || '';
+            document.getElementById('memo').value = record?.notes || '';
+            // 기존 에러 메시지 초기화
+            document.getElementById('timeError').textContent = '';
+            ['st', 'et', 'ot', 'rt'].forEach(id => document.getElementById(id).classList.remove('input-error'));
+        }
     </script>
 </body>
 </html>
