@@ -74,6 +74,14 @@
         /* 유효성 검사 에러 표시 */
         .input-error { border-color: #ff4757 !important; }
         .error-msg { color: #ff4757; font-size: 0.72rem; margin-top: 3px; }
+
+        /* 다중 외출 행 */
+        .outing-row { display: flex; gap: 5px; align-items: flex-end; margin-bottom: 5px; }
+        .outing-row .time-input-group { flex: 1; }
+        .btn-remove-outing { background: #ff4757; color: white; border: none; border-radius: 5px; padding: 6px 8px; cursor: pointer; font-size: 0.75rem; white-space: nowrap; align-self: flex-end; }
+        .btn-remove-outing:hover { background: #e0001a; }
+        .btn-add-outing { background: #f0f4ff; color: #667eea; border: 1px dashed #667eea; border-radius: 5px; padding: 6px 10px; cursor: pointer; font-size: 0.8rem; width: 100%; margin-top: 2px; }
+        .btn-add-outing:hover { background: #e0e8ff; }
     </style>
 </head>
 <body>
@@ -111,16 +119,8 @@
                             <input type="time" id="et" aria-label="퇴근 시간">
                         </div>
                     </div>
-                    <div class="time-row">
-                        <div class="time-input-group">
-                            <label for="ot">외출</label>
-                            <input type="time" id="ot" aria-label="외출 시간">
-                        </div>
-                        <div class="time-input-group">
-                            <label for="rt">복귀</label>
-                            <input type="time" id="rt" aria-label="복귀 시간">
-                        </div>
-                    </div>
+                    <div id="outingsContainer"></div>
+                    <button type="button" class="btn-add-outing" onclick="addOutingRow()" aria-label="외출 추가">+ 외출 추가</button>
                     <div id="timeError" class="error-msg" role="alert" aria-live="assertive"></div>
                 </div>
                 <div>
@@ -141,7 +141,7 @@
                         <thead>
                             <tr>
                                 <th scope="col">날짜</th><th scope="col">직원</th><th scope="col">출근</th>
-                                <th scope="col">퇴근</th><th scope="col">외출</th><th scope="col">복귀</th>
+                                <th scope="col">퇴근</th><th scope="col">외출내역</th>
                                 <th scope="col">지각/조퇴/외출</th><th scope="col">비고</th><th scope="col">삭제</th>
                             </tr>
                         </thead>
@@ -197,6 +197,13 @@
             return h * 60 + m;
         }
 
+        // 구 형식(outTime/returnTime) 또는 신 형식(outings 배열) 모두 처리
+        function getRecordOutings(record) {
+            if (record.outings && record.outings.length) return record.outings;
+            if (record.outTime) return [{ out: record.outTime, ret: record.returnTime || '' }];
+            return [];
+        }
+
         // XSS 방지: 사용자 입력 데이터를 HTML에 삽입하기 전 이스케이프
         function escHtml(str) {
             if (str == null) return '';
@@ -214,6 +221,49 @@
             t.textContent = msg;
             t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), duration);
+        }
+
+        // ──────────────────────────────────────────────────
+        // 다중 외출 행 관리
+        // ──────────────────────────────────────────────────
+        function addOutingRow(outVal = '', retVal = '') {
+            const container = document.getElementById('outingsContainer');
+            const idx = container.children.length;
+            const row = document.createElement('div');
+            row.className = 'outing-row';
+            row.innerHTML = `
+                <div class="time-input-group">
+                    <label>외출 ${idx + 1}</label>
+                    <input type="time" class="outing-out" value="${escHtml(outVal)}" aria-label="외출 ${idx + 1} 시간">
+                </div>
+                <div class="time-input-group">
+                    <label>복귀 ${idx + 1}</label>
+                    <input type="time" class="outing-ret" value="${escHtml(retVal)}" aria-label="복귀 ${idx + 1} 시간">
+                </div>
+                <button type="button" class="btn-remove-outing" onclick="removeOutingRow(this)" aria-label="외출 행 삭제">✕</button>
+            `;
+            container.appendChild(row);
+            updateOutingLabels();
+        }
+
+        function removeOutingRow(btn) {
+            btn.closest('.outing-row').remove();
+            updateOutingLabels();
+        }
+
+        function updateOutingLabels() {
+            document.querySelectorAll('#outingsContainer .outing-row').forEach((row, i) => {
+                row.querySelector('.outing-out').previousElementSibling.textContent = `외출 ${i + 1}`;
+                row.querySelector('.outing-ret').previousElementSibling.textContent = `복귀 ${i + 1}`;
+            });
+        }
+
+        // DOM에서 외출 목록 수집
+        function getOutingsFromDOM() {
+            return Array.from(document.querySelectorAll('#outingsContainer .outing-row')).map(row => ({
+                out: row.querySelector('.outing-out').value,
+                ret: row.querySelector('.outing-ret').value
+            })).filter(o => o.out || o.ret); // 둘 다 비어있는 행 제외
         }
 
         // ──────────────────────────────────────────────────
@@ -249,6 +299,9 @@
 
             // 테이블 이벤트 위임 (XSS 방지: onclick 인라인 제거)
             document.getElementById('listBody').addEventListener('click', handleTableClick);
+
+            // 기본 외출 행 1개 추가
+            addOutingRow();
         });
 
         // 페이지 이탈 시 Firebase 리스너 해제 (메모리 누수 방지)
@@ -345,13 +398,12 @@
 
             const s = document.getElementById('st').value;
             const e = document.getElementById('et').value;
-            const o = document.getElementById('ot').value;
-            const r = document.getElementById('rt').value;
             const errEl = document.getElementById('timeError');
 
-            // 입력 유효성 검사
+            // 기본 유효성 검사
             errEl.textContent = '';
-            ['st', 'et', 'ot', 'rt'].forEach(id => document.getElementById(id).classList.remove('input-error'));
+            ['st', 'et'].forEach(id => document.getElementById(id).classList.remove('input-error'));
+            document.querySelectorAll('.outing-out, .outing-ret').forEach(el => el.classList.remove('input-error'));
 
             if (s && e && timeToMinutes(s) >= timeToMinutes(e)) {
                 document.getElementById('st').classList.add('input-error');
@@ -359,40 +411,41 @@
                 errEl.textContent = '퇴근 시간이 출근 시간보다 빠를 수 없습니다.';
                 return;
             }
-            if (o && !r) {
-                document.getElementById('rt').classList.add('input-error');
-                errEl.textContent = '외출 시간 입력 시 복귀 시간도 입력해야 합니다.';
-                return;
-            }
-            if (!o && r) {
-                document.getElementById('ot').classList.add('input-error');
-                errEl.textContent = '복귀 시간 입력 시 외출 시간도 입력해야 합니다.';
-                return;
-            }
-            if (o && r && timeToMinutes(o) >= timeToMinutes(r)) {
-                document.getElementById('ot').classList.add('input-error');
-                document.getElementById('rt').classList.add('input-error');
-                errEl.textContent = '복귀 시간이 외출 시간보다 빠를 수 없습니다.';
-                return;
+
+            // 외출 행 유효성 검사 (각 행마다)
+            const rows = document.querySelectorAll('#outingsContainer .outing-row');
+            for (let i = 0; i < rows.length; i++) {
+                const oEl = rows[i].querySelector('.outing-out');
+                const rEl = rows[i].querySelector('.outing-ret');
+                const o = oEl.value, r = rEl.value;
+                if (o && !r) { rEl.classList.add('input-error'); errEl.textContent = `외출 ${i+1}: 복귀 시간을 입력해주세요.`; return; }
+                if (!o && r) { oEl.classList.add('input-error'); errEl.textContent = `외출 ${i+1}: 외출 시간을 입력해주세요.`; return; }
+                if (o && r && timeToMinutes(o) >= timeToMinutes(r)) {
+                    oEl.classList.add('input-error'); rEl.classList.add('input-error');
+                    errEl.textContent = `외출 ${i+1}: 복귀 시간이 외출 시간보다 빠를 수 없습니다.`; return;
+                }
             }
 
-            // 이탈 시간 계산
+            // 이탈 시간 계산 (다중 외출 합산)
             let missMinutes = 0;
             if (s && timeToMinutes(s) > 510) missMinutes += (timeToMinutes(s) - 510);
             if (e && timeToMinutes(e) < 1050) missMinutes += (1050 - timeToMinutes(e));
-            if (o && r) {
-                const oMin = timeToMinutes(o), rMin = timeToMinutes(r);
-                const lunchOverlap = Math.max(0, Math.min(rMin, 810) - Math.max(oMin, 750));
-                missMinutes += (rMin - oMin) - lunchOverlap;
-            }
+
+            const outings = getOutingsFromDOM();
+            outings.forEach(({ out, ret }) => {
+                if (out && ret) {
+                    const oMin = timeToMinutes(out), rMin = timeToMinutes(ret);
+                    const lunchOverlap = Math.max(0, Math.min(rMin, 810) - Math.max(oMin, 750));
+                    missMinutes += (rMin - oMin) - lunchOverlap;
+                }
+            });
 
             db.ref(`attendance/${selPerson}/${selDate}`).set({
                 date: selDate,
                 person: selPerson,
                 startTime: s,
                 endTime: e,
-                outTime: o,
-                returnTime: r,
+                outings: outings.length ? outings : [],
                 lateMinutes: missMinutes,
                 notes: document.getElementById('memo').value
             }).then(() => {
@@ -405,11 +458,14 @@
 
         // 저장 후 입력 폼 초기화
         function resetForm() {
-            ['st', 'et', 'ot', 'rt'].forEach(id => {
+            ['st', 'et'].forEach(id => {
                 const el = document.getElementById(id);
                 el.value = '';
                 el.classList.remove('input-error');
             });
+            // 외출 행 초기화 (1개 빈 행으로 리셋)
+            document.getElementById('outingsContainer').innerHTML = '';
+            addOutingRow();
             document.getElementById('memo').value = '';
             document.getElementById('timeError').textContent = '';
             selDate = null;
@@ -491,13 +547,16 @@
                 tr.dataset.person = r.person;
 
                 const lateClass = (r.lateMinutes || 0) > 0 ? ' class="late-text"' : '';
+                const outingsText = getRecordOutings(r)
+                    .filter(o => o.out)
+                    .map(o => `${escHtml(o.out)}~${escHtml(o.ret || '?')}`)
+                    .join('<br>') || '-';
                 tr.innerHTML = `
                     <td>${escHtml(r.date)}</td>
                     <td>${escHtml(r.person)}</td>
                     <td>${escHtml(r.startTime) || '-'}</td>
                     <td>${escHtml(r.endTime) || '-'}</td>
-                    <td>${escHtml(r.outTime) || '-'}</td>
-                    <td>${escHtml(r.returnTime) || '-'}</td>
+                    <td>${outingsText}</td>
                     <td${lateClass}>${r.lateMinutes || 0}분</td>
                     <td>${escHtml(r.notes)}</td>
                     <td><button class="btn-del" data-date="${escHtml(r.date)}" data-person="${escHtml(r.person)}" aria-label="${escHtml(r.date)} ${escHtml(r.person)} 기록 삭제">삭제</button></td>
@@ -538,12 +597,19 @@
             const record = allRecords.find(x => x.date === selDate && x.person === selPerson);
             document.getElementById('st').value = record?.startTime || '';
             document.getElementById('et').value = record?.endTime || '';
-            document.getElementById('ot').value = record?.outTime || '';
-            document.getElementById('rt').value = record?.returnTime || '';
             document.getElementById('memo').value = record?.notes || '';
-            // 기존 에러 메시지 초기화
+
+            // 외출 행 복원 (구 형식/신 형식 모두 처리)
+            document.getElementById('outingsContainer').innerHTML = '';
+            const outings = record ? getRecordOutings(record) : [];
+            if (outings.length > 0) {
+                outings.forEach(o => addOutingRow(o.out, o.ret));
+            } else {
+                addOutingRow(); // 빈 행 1개
+            }
+
             document.getElementById('timeError').textContent = '';
-            ['st', 'et', 'ot', 'rt'].forEach(id => document.getElementById(id).classList.remove('input-error'));
+            ['st', 'et'].forEach(id => document.getElementById(id).classList.remove('input-error'));
         }
     </script>
 </body>
