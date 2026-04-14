@@ -88,6 +88,13 @@
         .input-error { border-color: #ff4757 !important; }
         .error-msg { color: #ff4757; font-size: 0.72rem; margin-top: 3px; }
 
+        /* 무단결근 */
+        .absence-check-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px 10px; background: #fff5f5; border: 1px solid #ffcdd2; border-radius: 8px; }
+        .absence-check-wrap input[type=checkbox] { width: 18px; height: 18px; accent-color: #ff4757; cursor: pointer; }
+        .absence-check-wrap label { font-size: 0.9rem; font-weight: bold; color: #ff4757; cursor: pointer; user-select: none; }
+        .time-box.disabled { opacity: 0.4; pointer-events: none; }
+        .badge-absence { display: inline-block; background: #ff4757; color: white; font-size: 0.7rem; font-weight: bold; padding: 1px 6px; border-radius: 10px; margin-left: 4px; vertical-align: middle; }
+
         /* 다중 외출 행 */
         .outing-row { display: flex; gap: 5px; align-items: flex-end; margin-bottom: 5px; }
         .outing-row .time-input-group { flex: 1; }
@@ -121,7 +128,11 @@
                     날짜: <span id="viewDate" style="font-weight:bold; color:#667eea;" aria-live="polite">날짜 선택</span>
                 </div>
 
-                <div class="time-box">
+                <div class="absence-check-wrap">
+                    <input type="checkbox" id="chkAbsence" onchange="toggleAbsence()" aria-label="무단결근 여부">
+                    <label for="chkAbsence">무단결근 (1일 연차 480분 자동 적용)</label>
+                </div>
+                <div class="time-box" id="timeBox">
                     <div class="time-row">
                         <div class="time-input-group">
                             <label for="st">출근</label>
@@ -268,6 +279,14 @@
             t.textContent = msg;
             t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), duration);
+        }
+
+        // ──────────────────────────────────────────────────
+        // 무단결근 토글
+        // ──────────────────────────────────────────────────
+        function toggleAbsence() {
+            const checked = document.getElementById('chkAbsence').checked;
+            document.getElementById('timeBox').classList.toggle('disabled', checked);
         }
 
         // ──────────────────────────────────────────────────
@@ -443,59 +462,66 @@
                 return;
             }
 
-            const s = document.getElementById('st').value;
-            const e = document.getElementById('et').value;
+            const isAbsence = document.getElementById('chkAbsence').checked;
             const errEl = document.getElementById('timeError');
-
-            // 기본 유효성 검사
             errEl.textContent = '';
-            ['st', 'et'].forEach(id => document.getElementById(id).classList.remove('input-error'));
-            document.querySelectorAll('.outing-out, .outing-ret').forEach(el => el.classList.remove('input-error'));
 
-            if (s && e && timeToMinutes(s) >= timeToMinutes(e)) {
-                document.getElementById('st').classList.add('input-error');
-                document.getElementById('et').classList.add('input-error');
-                errEl.textContent = '퇴근 시간이 출근 시간보다 빠를 수 없습니다.';
-                return;
-            }
-
-            // 외출 행 유효성 검사 (각 행마다)
-            const rows = document.querySelectorAll('#outingsContainer .outing-row');
-            for (let i = 0; i < rows.length; i++) {
-                const oEl = rows[i].querySelector('.outing-out');
-                const rEl = rows[i].querySelector('.outing-ret');
-                const o = oEl.value, r = rEl.value;
-                if (o && !r) { rEl.classList.add('input-error'); errEl.textContent = `외출 ${i+1}: 복귀 시간을 입력해주세요.`; return; }
-                if (!o && r) { oEl.classList.add('input-error'); errEl.textContent = `외출 ${i+1}: 외출 시간을 입력해주세요.`; return; }
-                if (o && r && timeToMinutes(o) >= timeToMinutes(r)) {
-                    oEl.classList.add('input-error'); rEl.classList.add('input-error');
-                    errEl.textContent = `외출 ${i+1}: 복귀 시간이 외출 시간보다 빠를 수 없습니다.`; return;
-                }
-            }
-
-            // 이탈 시간 계산 (다중 외출 합산)
             let missMinutes = 0;
-            if (s && timeToMinutes(s) > 510) missMinutes += (timeToMinutes(s) - 510);
-            if (e && timeToMinutes(e) < 1050) missMinutes += (1050 - timeToMinutes(e));
-
-            const outings = getOutingsFromDOM();
-            outings.forEach(({ out, ret }) => {
-                if (out && ret) {
-                    const oMin = timeToMinutes(out), rMin = timeToMinutes(ret);
-                    const lunchOverlap = Math.max(0, Math.min(rMin, 810) - Math.max(oMin, 750));
-                    missMinutes += (rMin - oMin) - lunchOverlap;
-                }
-            });
-
-            db.ref(`attendance/${selPerson}/${selDate}`).set({
+            let saveData = {
                 date: selDate,
                 person: selPerson,
-                startTime: s,
-                endTime: e,
-                outings: outings.length ? outings : [],
-                lateMinutes: missMinutes,
                 notes: document.getElementById('memo').value
-            }).then(() => {
+            };
+
+            if (isAbsence) {
+                // 무단결근: 8시간(480분) 고정
+                missMinutes = 480;
+                saveData = { ...saveData, absenceType: 'unauthorized', startTime: '', endTime: '', outings: [], lateMinutes: 480 };
+            } else {
+                const s = document.getElementById('st').value;
+                const e = document.getElementById('et').value;
+
+                ['st', 'et'].forEach(id => document.getElementById(id).classList.remove('input-error'));
+                document.querySelectorAll('.outing-out, .outing-ret').forEach(el => el.classList.remove('input-error'));
+
+                if (s && e && timeToMinutes(s) >= timeToMinutes(e)) {
+                    document.getElementById('st').classList.add('input-error');
+                    document.getElementById('et').classList.add('input-error');
+                    errEl.textContent = '퇴근 시간이 출근 시간보다 빠를 수 없습니다.';
+                    return;
+                }
+
+                // 외출 행 유효성 검사 (각 행마다)
+                const rows = document.querySelectorAll('#outingsContainer .outing-row');
+                for (let i = 0; i < rows.length; i++) {
+                    const oEl = rows[i].querySelector('.outing-out');
+                    const rEl = rows[i].querySelector('.outing-ret');
+                    const o = oEl.value, r = rEl.value;
+                    if (o && !r) { rEl.classList.add('input-error'); errEl.textContent = `외출 ${i+1}: 복귀 시간을 입력해주세요.`; return; }
+                    if (!o && r) { oEl.classList.add('input-error'); errEl.textContent = `외출 ${i+1}: 외출 시간을 입력해주세요.`; return; }
+                    if (o && r && timeToMinutes(o) >= timeToMinutes(r)) {
+                        oEl.classList.add('input-error'); rEl.classList.add('input-error');
+                        errEl.textContent = `외출 ${i+1}: 복귀 시간이 외출 시간보다 빠를 수 없습니다.`; return;
+                    }
+                }
+
+                // 이탈 시간 계산 (다중 외출 합산)
+                if (s && timeToMinutes(s) > 510) missMinutes += (timeToMinutes(s) - 510);
+                if (e && timeToMinutes(e) < 1050) missMinutes += (1050 - timeToMinutes(e));
+
+                const outings = getOutingsFromDOM();
+                outings.forEach(({ out, ret }) => {
+                    if (out && ret) {
+                        const oMin = timeToMinutes(out), rMin = timeToMinutes(ret);
+                        const lunchOverlap = Math.max(0, Math.min(rMin, 810) - Math.max(oMin, 750));
+                        missMinutes += (rMin - oMin) - lunchOverlap;
+                    }
+                });
+
+                saveData = { ...saveData, absenceType: '', startTime: s, endTime: e, outings: outings.length ? outings : [], lateMinutes: missMinutes };
+            }
+
+            db.ref(`attendance/${selPerson}/${selDate}`).set(saveData).then(() => {
                 showToast('저장되었습니다.');
                 resetForm();
             }).catch(() => {
@@ -505,6 +531,10 @@
 
         // 저장 후 입력 폼 초기화
         function resetForm() {
+            // 무단결근 체크박스 해제
+            document.getElementById('chkAbsence').checked = false;
+            document.getElementById('timeBox').classList.remove('disabled');
+
             ['st', 'et'].forEach(id => {
                 const el = document.getElementById(id);
                 el.value = '';
@@ -612,13 +642,16 @@
 
                 const totalMin = r.lateMinutes || 0;
                 const d = calcDisplay(totalMin);
-                const outingsText = getRecordOutings(r)
-                    .filter(o => o.out)
-                    .map(o => `${escHtml(o.out)}~${escHtml(o.ret || '?')}`)
-                    .join('<br>') || '-';
+                const isAbsence = r.absenceType === 'unauthorized';
+                const outingsText = isAbsence
+                    ? '<span class="badge-absence">무단결근</span>'
+                    : (getRecordOutings(r)
+                        .filter(o => o.out)
+                        .map(o => `${escHtml(o.out)}~${escHtml(o.ret || '?')}`)
+                        .join('<br>') || '-');
                 const lateCell = totalMin > 0
                     ? `<td class="late-detail">
-                           <span class="d-min">${totalMin}분</span><br>
+                           <span class="d-min">${totalMin}분</span>${isAbsence ? ' <span class="badge-absence">무단결근</span>' : ''}<br>
                            <span class="d-hour">${d.hourStr}</span><br>
                            <span class="d-day">연차 ${d.day}일</span>
                        </td>`
@@ -667,6 +700,12 @@
         // ──────────────────────────────────────────────────
         function loadDetail() {
             const record = allRecords.find(x => x.date === selDate && x.person === selPerson);
+
+            // 무단결근 여부 복원
+            const isAbsence = record?.absenceType === 'unauthorized';
+            document.getElementById('chkAbsence').checked = isAbsence;
+            document.getElementById('timeBox').classList.toggle('disabled', isAbsence);
+
             document.getElementById('st').value = record?.startTime || '';
             document.getElementById('et').value = record?.endTime || '';
             document.getElementById('memo').value = record?.notes || '';
