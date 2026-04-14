@@ -83,6 +83,9 @@
         .late-text { color: #ff4757; font-weight: bold; }
         .btn-del { background: #ff4757; color: white; border: none; border-radius: 3px; padding: 3px 6px; cursor: pointer; font-size: 0.75rem; }
         .btn-del:hover { background: #e0001a; }
+        .td-notes { cursor: text; min-width: 80px; }
+        .td-notes:hover { background: #fffbe6; }
+        .td-notes input { width: 100%; border: 1px solid #667eea; border-radius: 4px; padding: 3px 5px; font-size: 0.75rem; outline: none; }
 
         /* 유효성 검사 에러 표시 */
         .input-error { border-color: #ff4757 !important; }
@@ -663,7 +666,7 @@
                     <td>${escHtml(r.endTime) || '-'}</td>
                     <td>${outingsText}</td>
                     ${lateCell}
-                    <td>${escHtml(r.notes)}</td>
+                    <td class="td-notes" data-date="${escHtml(r.date)}" data-person="${escHtml(r.person)}" title="클릭하여 비고 수정">${escHtml(r.notes) || '<span style="color:#ccc">메모</span>'}</td>
                     <td><button class="btn-del" data-date="${escHtml(r.date)}" data-person="${escHtml(r.person)}" aria-label="${escHtml(r.date)} ${escHtml(r.person)} 기록 삭제">삭제</button></td>
                 `;
                 tbody.appendChild(tr);
@@ -681,6 +684,36 @@
                         .then(() => showToast('삭제되었습니다.'))
                         .catch(() => showToast('삭제 중 오류가 발생했습니다.'));
                 }
+                return;
+            }
+
+            // 비고 인라인 편집
+            const notesTd = e.target.closest('.td-notes');
+            if (notesTd && !notesTd.querySelector('input')) {
+                e.stopPropagation();
+                const { date, person } = notesTd.dataset;
+                const record = allRecords.find(x => x.date === date && x.person === person);
+                const currentVal = record?.notes || '';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = currentVal;
+                notesTd.innerHTML = '';
+                notesTd.appendChild(input);
+                input.focus();
+
+                function saveNotes() {
+                    const newVal = input.value.trim();
+                    if (newVal === currentVal) { renderTable(); return; }
+                    db.ref(`attendance/${person}/${date}`).update({ notes: newVal })
+                        .then(() => showToast('비고 저장됨'))
+                        .catch(() => showToast('저장 오류'));
+                }
+                input.addEventListener('blur', saveNotes);
+                input.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') { input.blur(); }
+                    if (e.key === 'Escape') { renderTable(); }
+                });
                 return;
             }
 
