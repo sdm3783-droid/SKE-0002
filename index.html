@@ -1777,11 +1777,8 @@
             const isActive = filterName === u;
             const ratio = userTotal / maxVal;
 
-            const fillStyle = ratio > 0.65
-                ? 'background:linear-gradient(180deg,#ef4444,#f87171);'
-                : ratio > 0.25
-                ? 'background:linear-gradient(180deg,#f59e0b,#fbbf24);'
-                : 'background:linear-gradient(180deg,#6366f1,#818cf8);';
+            const color = AVATAR_COLORS[users.indexOf(u) % AVATAR_COLORS.length];
+            const fillStyle = `background:${color};`;
 
             const barHeight = userTotal === 0 ? 0 : Math.max(pct, 4);
 
