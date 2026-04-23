@@ -1438,13 +1438,18 @@
             list.appendChild(btn);
         });
 
+        const NAME_MIGRATION = { '1째': '1', '2째': '2' };
+
         const ref = db.ref('attendance');
         dbListener = ref.on('value', snap => {
             const val = snap.val();
             allRecords = [];
             if (val) {
                 Object.values(val).forEach(personData =>
-                    Object.values(personData).forEach(record => allRecords.push(record))
+                    Object.values(personData).forEach(record => {
+                        if (NAME_MIGRATION[record.person]) record.person = NAME_MIGRATION[record.person];
+                        allRecords.push(record);
+                    })
                 );
             }
             refresh();
