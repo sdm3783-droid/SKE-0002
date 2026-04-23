@@ -604,6 +604,141 @@
             transform: translateX(-50%) translateY(0);
         }
 
+        /* ── 직원 모달 ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.45);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+            width: 100%;
+            max-width: 560px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalIn 0.2s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes modalIn {
+            from { opacity:0; transform:scale(0.96) translateY(8px); }
+            to   { opacity:1; transform:scale(1) translateY(0); }
+        }
+        .modal-header {
+            padding: 20px 22px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+        .modal-avatar {
+            width: 48px; height: 48px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            flex-shrink: 0;
+            color: #ffffff;
+        }
+        .modal-info { flex: 1; }
+        .modal-name { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+        .modal-sub  { font-size: 12px; color: #94a3b8; }
+        .modal-grade-badge {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            font-size: 22px; font-weight: 800;
+            flex-shrink: 0;
+            letter-spacing: -1px;
+        }
+        .modal-grade-badge .grade-label { font-size: 9px; font-weight: 600; letter-spacing: 0.5px; margin-top: 1px; opacity: 0.8; }
+        .grade-A { background: #f0fdf4; color: #16a34a; border: 2px solid #bbf7d0; }
+        .grade-B { background: #eff6ff; color: #2563eb; border: 2px solid #bfdbfe; }
+        .grade-C { background: #fffbeb; color: #d97706; border: 2px solid #fde68a; }
+        .grade-D { background: #fef2f2; color: #dc2626; border: 2px solid #fecaca; }
+        .modal-body {
+            padding: 18px 22px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-section-title {
+            font-size: 10px;
+            font-weight: 600;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .modal-stats-row {
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+        .modal-stat-box {
+            background: #f8fafc;
+            border: 1px solid #e8ecf0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            text-align: center;
+        }
+        .modal-stat-val { font-size: 16px; font-weight: 700; color: #1e293b; }
+        .modal-stat-lbl { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+        .discipline-banner {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .discipline-banner.danger { background:#fef2f2; border:1px solid #fecaca; color:#dc2626; }
+        .discipline-banner.warn   { background:#fffbeb; border:1px solid #fde68a; color:#d97706; }
+        .discipline-banner.good   { background:#f0fdf4; border:1px solid #bbf7d0; color:#16a34a; }
+        .discipline-banner.great  { background:#eff6ff; border:1px solid #bfdbfe; color:#2563eb; }
+        .modal-history { display: flex; flex-direction: column; gap: 6px; }
+        .history-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        .history-date { color: #64748b; font-weight: 500; min-width: 90px; }
+        .history-detail { color: #94a3b8; flex: 1; font-size: 11px; }
+        .history-min { font-weight: 700; min-width: 50px; text-align: right; }
+        .history-min.red { color: #ef4444; }
+        .history-min.zero { color: #22c55e; }
+        .modal-empty { text-align:center; color:#cbd5e1; padding:24px; font-size:13px; }
+        .modal-footer {
+            padding: 14px 22px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .modal-close-btn {
+            padding: 8px 20px;
+            background: #f1f5f9;
+            border: none;
+            border-radius: 8px;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+        .modal-close-btn:hover { background: #e2e8f0; color: #334155; }
+
         /* ── 반응형 ── */
         @media (max-width: 900px) {
             .sidebar { display: none; }
@@ -762,10 +897,149 @@
     </div><!-- /content -->
 </div><!-- /app-main -->
 
+<!-- 직원 평가 모달 -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalName">
+        <div class="modal-header">
+            <div class="modal-avatar" id="modalAvatar"></div>
+            <div class="modal-info">
+                <div class="modal-name" id="modalName"></div>
+                <div class="modal-sub" id="modalSub"></div>
+            </div>
+            <div class="modal-grade-badge" id="modalGrade">
+                <span id="modalGradeLetter"></span>
+                <span class="grade-label">등급</span>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div id="modalDiscipline"></div>
+            <div class="modal-stats-row">
+                <div class="modal-stat-box">
+                    <div class="modal-stat-val" id="modalTotalMin">—</div>
+                    <div class="modal-stat-lbl">총 이탈(분)</div>
+                </div>
+                <div class="modal-stat-box">
+                    <div class="modal-stat-val" id="modalTotalDay">—</div>
+                    <div class="modal-stat-lbl">연차 환산(일)</div>
+                </div>
+                <div class="modal-stat-box">
+                    <div class="modal-stat-val" id="modalRecordCount">—</div>
+                    <div class="modal-stat-lbl">총 기록 수</div>
+                </div>
+            </div>
+            <div class="modal-section-title">이탈 내역</div>
+            <div class="modal-history" id="modalHistory"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-close-btn" onclick="closeModal()">닫기</button>
+        </div>
+    </div>
+</div>
+
 <!-- 토스트 -->
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
+    // ──────────────────────────────────────────────────
+    // 직원 평가 모달
+    // ──────────────────────────────────────────────────
+    const AVATAR_COLORS = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981'];
+
+    function getGrade(totalMin) {
+        if (totalMin <= 60)  return { letter:'A', label:'우수', cls:'grade-A', bannerCls:'great',  icon:'🏆', msg:'우수한 근태를 유지하고 있습니다.' };
+        if (totalMin <= 180) return { letter:'B', label:'양호', cls:'grade-B', bannerCls:'good',   icon:'✅', msg:'양호한 수준입니다. 계속 유지하세요.' };
+        if (totalMin <= 360) return { letter:'C', label:'주의', cls:'grade-C', bannerCls:'warn',   icon:'⚠️', msg:'이탈 시간이 누적되고 있습니다. 주의가 필요합니다.' };
+        return                       { letter:'D', label:'징계대상', cls:'grade-D', bannerCls:'danger', icon:'🚨', msg:'징계대상입니다. 즉각적인 개선이 필요합니다.' };
+    }
+
+    function openModal(userName) {
+        const records = allRecords
+            .filter(r => r.person === userName)
+            .sort((a, b) => b.date.localeCompare(a.date));
+
+        const totalMin = records.reduce((acc, r) => acc + (r.lateMinutes || 0), 0);
+        const grade = getGrade(totalMin);
+        const colorIdx = users.indexOf(userName) % AVATAR_COLORS.length;
+        const avatarColor = AVATAR_COLORS[colorIdx];
+
+        // 헤더
+        const avatar = document.getElementById('modalAvatar');
+        avatar.textContent = userName.charAt(0);
+        avatar.style.background = avatarColor;
+
+        document.getElementById('modalName').textContent = userName;
+        document.getElementById('modalSub').textContent =
+            `기록 ${records.length}건 · 누적 이탈 ${totalMin}분`;
+
+        const gradeEl = document.getElementById('modalGrade');
+        gradeEl.className = 'modal-grade-badge ' + grade.cls;
+        document.getElementById('modalGradeLetter').textContent = grade.letter;
+
+        // 요약 수치
+        document.getElementById('modalTotalMin').textContent = totalMin + '분';
+        document.getElementById('modalTotalDay').textContent =
+            (totalMin / 480).toFixed(2) + '일';
+        document.getElementById('modalRecordCount').textContent = records.length + '건';
+
+        // 징계 배너
+        document.getElementById('modalDiscipline').innerHTML = `
+            <div class="discipline-banner ${grade.bannerCls}">
+                <span style="font-size:18px;">${grade.icon}</span>
+                <div>
+                    <div>${grade.label} — ${grade.letter}등급</div>
+                    <div style="font-size:11px;font-weight:400;margin-top:2px;opacity:0.85;">${grade.msg}</div>
+                </div>
+            </div>
+        `;
+
+        // 내역 목록
+        const historyEl = document.getElementById('modalHistory');
+        if (records.length === 0) {
+            historyEl.innerHTML = '<div class="modal-empty">기록이 없습니다.</div>';
+        } else {
+            historyEl.innerHTML = records.map(r => {
+                const min = r.lateMinutes || 0;
+                const isAbsence = r.absenceType === 'unauthorized';
+                const outings = getRecordOutings(r).filter(o => o.out);
+                let detail = '';
+                if (isAbsence) detail = '무단결근';
+                else {
+                    const parts = [];
+                    if (r.startTime && r.startTime > '08:30') parts.push(`지각 (${r.startTime})`);
+                    if (r.endTime && r.endTime < '17:30') parts.push(`조퇴 (${r.endTime})`);
+                    outings.forEach(o => parts.push(`외출 ${o.out}~${o.ret||'?'}`));
+                    detail = parts.join(' / ') || (r.startTime ? '정상' : '—');
+                }
+                const minCls = min > 0 ? 'red' : 'zero';
+                const minText = min > 0 ? `+${min}분` : '정상';
+                return `
+                    <div class="history-row">
+                        <span class="history-date">${escHtml(r.date)}</span>
+                        <span class="history-detail">${escHtml(detail)}</span>
+                        <span class="history-min ${minCls}">${minText}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        document.getElementById('modalOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(e) {
+        if (e && e.target !== document.getElementById('modalOverlay')) return;
+        document.getElementById('modalOverlay').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    // ESC 키로 모달 닫기
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            document.getElementById('modalOverlay').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+    });
+
     // ──────────────────────────────────────────────────
     // 사이드바 네비게이션
     // ──────────────────────────────────────────────────
@@ -1026,17 +1300,13 @@
 
             const card = document.createElement('div');
             card.className = `status-card ${statusClass}${isSelected ? ' selected-card' : ''}`;
+            card.title = `${u} 평가 보기`;
             card.innerHTML = `
                 <div class="sc-name">${escHtml(u)}</div>
                 <div class="sc-status">${statusText}</div>
                 <div class="sc-time">${escHtml(timeText)}</div>
             `;
-            card.addEventListener('click', () => {
-                selPerson = u;
-                updatePersonUI();
-                loadDetail();
-                renderStatusCards();
-            });
+            card.addEventListener('click', () => openModal(u));
             container.appendChild(card);
         });
     }
@@ -1235,8 +1505,8 @@
             item.className = 'css-bar-item' + (isActive ? ' bar-active' : '');
             item.innerHTML = `
                 <div class="css-bar-top">
-                    <span class="css-bar-name" onclick="setFilter('${escHtml(u)}')">${escHtml(u)}</span>
-                    <span class="css-bar-val">${d.chartLabel}</span>
+                    <span class="css-bar-name" onclick="openModal('${escHtml(u)}')" title="${escHtml(u)} 평가 보기">${escHtml(u)}</span>
+                    <span class="css-bar-val" onclick="setFilter('${escHtml(u)}')" style="cursor:pointer;">${d.chartLabel}</span>
                 </div>
                 <div class="css-bar-track">
                     <div class="css-bar-fill" style="width:${pct < 1 && totals[i] === 0 ? 0 : Math.max(pct, totals[i] > 0 ? 4 : 0).toFixed(1)}%;${fillStyle}"></div>
