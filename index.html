@@ -238,7 +238,12 @@
         }
         .calendar-day {
             aspect-ratio: 1;
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 4px;
+            gap: 2px;
             font-size: 11px;
             border-radius: 7px;
             cursor: pointer;
@@ -247,19 +252,12 @@
             transition: all 0.15s;
             border: 1px solid transparent;
             font-weight: 500;
+            overflow: hidden;
         }
         .calendar-day:hover { background: #f1f5f9; color: #1e293b; }
         .calendar-day.sun { color: #ef4444; }
         .calendar-day.sat { color: #3b82f6; }
-        .calendar-day.has-record { color: #1e293b; font-weight: 600; }
-        .calendar-day.has-record::after {
-            content: '';
-            position: absolute;
-            bottom: 2px;
-            width: 3px; height: 3px;
-            border-radius: 50%;
-            background: #6366f1;
-        }
+        .calendar-day.has-record { color: #1e293b; font-weight: 700; }
         .calendar-day.today {
             background: #ede9fe;
             border-color: #c4b5fd;
@@ -272,6 +270,29 @@
             color: #ffffff !important;
             font-weight: 700;
             box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+        }
+        /* 아바타 스택 */
+        .cal-avatars {
+            display: flex;
+            align-items: center;
+        }
+        .cal-avatar {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            font-size: 6px;
+            font-weight: 700;
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid #fff;
+            margin-left: -3px;
+            flex-shrink: 0;
+        }
+        .cal-avatar:first-child { margin-left: 0; }
+        .cal-avatar-more {
+            background: #e2e8f0;
+            color: #64748b;
+            font-size: 5px;
+            font-weight: 700;
         }
 
         /* ── 기록 테이블 ── */
@@ -1545,6 +1566,11 @@
             const hasRecord = allRecords.some(r => r.date === dateStr);
             const dow = new Date(y, m, day).getDay();
 
+            // 해당 날짜에 기록된 직원 목록
+            const dayPersons = hasRecord
+                ? users.filter(u => allRecords.some(r => r.date === dateStr && r.person === u))
+                : [];
+
             const cell = document.createElement('div');
             cell.className = 'calendar-day';
             if (hasRecord) cell.classList.add('has-record');
@@ -1552,10 +1578,35 @@
             if (dow === 6) cell.classList.add('sat');
             if (dateStr === todayStr) cell.classList.add('today');
             if (selDate === dateStr) cell.classList.add('selected');
-            cell.textContent = day;
             cell.setAttribute('role', 'gridcell');
-            cell.setAttribute('aria-label', `${m + 1}월 ${day}일${hasRecord ? ' (기록 있음)' : ''}`);
+            cell.setAttribute('aria-label', `${m + 1}월 ${day}일${hasRecord ? ` (기록 ${dayPersons.length}명)` : ''}`);
             cell.setAttribute('tabindex', '0');
+
+            // 날짜 숫자
+            const dayNum = document.createElement('span');
+            dayNum.textContent = day;
+            cell.appendChild(dayNum);
+
+            // 아바타 스택 (기록 있는 날만)
+            if (hasRecord && dayPersons.length > 0) {
+                const stack = document.createElement('div');
+                stack.className = 'cal-avatars';
+                const MAX_SHOW = 3;
+                dayPersons.slice(0, MAX_SHOW).forEach(u => {
+                    const av = document.createElement('span');
+                    av.className = 'cal-avatar';
+                    av.style.background = AVATAR_COLORS[users.indexOf(u) % AVATAR_COLORS.length];
+                    av.textContent = u.charAt(0);
+                    stack.appendChild(av);
+                });
+                if (dayPersons.length > MAX_SHOW) {
+                    const more = document.createElement('span');
+                    more.className = 'cal-avatar cal-avatar-more';
+                    more.textContent = `+${dayPersons.length - MAX_SHOW}`;
+                    stack.appendChild(more);
+                }
+                cell.appendChild(stack);
+            }
 
             cell.addEventListener('click', () => {
                 if (hasRecord) {
