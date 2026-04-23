@@ -739,6 +739,106 @@
         }
         .modal-close-btn:hover { background: #e2e8f0; color: #334155; }
 
+        /* ── 날짜 모달 ── */
+        .day-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.45);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            backdrop-filter: blur(4px);
+        }
+        .day-modal-overlay.open { display: flex; }
+        .day-modal {
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+            width: 100%;
+            max-width: 500px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalIn 0.2s cubic-bezier(.4,0,.2,1);
+        }
+        .day-modal-header {
+            padding: 18px 22px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .day-modal-date-box {
+            width: 46px; height: 46px;
+            background: #ede9fe;
+            border-radius: 12px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .day-modal-date-box .dm-month { font-size: 9px; font-weight: 700; color: #6366f1; letter-spacing: 0.5px; text-transform: uppercase; }
+        .day-modal-date-box .dm-day   { font-size: 20px; font-weight: 800; color: #6366f1; line-height: 1; }
+        .day-modal-title { font-size: 16px; font-weight: 700; color: #1e293b; }
+        .day-modal-sub   { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+        .day-modal-body  { padding: 16px 22px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+        .day-record-card {
+            border: 1px solid #e8ecf0;
+            border-radius: 12px;
+            padding: 13px 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .day-record-avatar {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .day-record-info { flex: 1; min-width: 0; }
+        .day-record-name { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+        .day-record-times { font-size: 12px; color: #64748b; margin-bottom: 3px; }
+        .day-record-outings { font-size: 11px; color: #94a3b8; }
+        .day-record-notes { font-size: 11px; color: #94a3b8; margin-top: 3px; font-style: italic; }
+        .day-record-min {
+            font-size: 13px; font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            align-self: flex-start;
+        }
+        .day-record-min.has-late { background:#fef2f2; color:#ef4444; border:1px solid #fecaca; }
+        .day-record-min.no-late  { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+        .day-record-min.absence  { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
+        .day-modal-empty { text-align:center; color:#cbd5e1; padding:32px; font-size:13px; }
+        .day-modal-footer {
+            padding: 13px 22px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .day-modal-select-btn {
+            padding: 8px 16px;
+            background: #6366f1;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+        .day-modal-select-btn:hover { background: #4f46e5; }
+
         /* ── 반응형 ── */
         @media (max-width: 900px) {
             .sidebar { display: none; }
@@ -897,6 +997,27 @@
     </div><!-- /content -->
 </div><!-- /app-main -->
 
+<!-- 날짜 기록 모달 -->
+<div class="day-modal-overlay" id="dayModalOverlay" onclick="closeDayModal(event)">
+    <div class="day-modal" role="dialog" aria-modal="true">
+        <div class="day-modal-header">
+            <div class="day-modal-date-box">
+                <span class="dm-month" id="dmMonth"></span>
+                <span class="dm-day"   id="dmDay"></span>
+            </div>
+            <div>
+                <div class="day-modal-title" id="dmTitle"></div>
+                <div class="day-modal-sub"   id="dmSub"></div>
+            </div>
+        </div>
+        <div class="day-modal-body" id="dmBody"></div>
+        <div class="day-modal-footer">
+            <button class="day-modal-select-btn" id="dmSelectBtn">이 날짜로 입력하기</button>
+            <button class="modal-close-btn" onclick="closeDayModal()">닫기</button>
+        </div>
+    </div>
+</div>
+
 <!-- 직원 평가 모달 -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalName">
@@ -940,6 +1061,84 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
+    // ──────────────────────────────────────────────────
+    // 날짜 기록 모달
+    // ──────────────────────────────────────────────────
+    function openDayModal(dateStr) {
+        const dayRecords = allRecords
+            .filter(r => r.date === dateStr)
+            .sort((a, b) => a.person.localeCompare(b.person));
+
+        const parts = dateStr.split('-');
+        const y = parts[0], m = parts[1], d = parts[2];
+        const dow = ['일','월','화','수','목','금','토'][new Date(dateStr).getDay()];
+
+        document.getElementById('dmMonth').textContent = `${m}월`;
+        document.getElementById('dmDay').textContent   = d;
+        document.getElementById('dmTitle').textContent = `${y}년 ${m}월 ${d}일 (${dow})`;
+        document.getElementById('dmSub').textContent   =
+            dayRecords.length > 0
+                ? `${dayRecords.length}명 기록 · 이탈 합계 ${dayRecords.reduce((a,r)=>a+(r.lateMinutes||0),0)}분`
+                : '기록된 내역이 없습니다.';
+
+        // 이 날짜로 입력하기 버튼
+        document.getElementById('dmSelectBtn').onclick = () => {
+            closeDayModal();
+            selectDate(dateStr);
+        };
+
+        const body = document.getElementById('dmBody');
+        if (dayRecords.length === 0) {
+            body.innerHTML = '<div class="day-modal-empty">📭 이 날짜에 기록된 내역이 없습니다.</div>';
+        } else {
+            body.innerHTML = dayRecords.map(r => {
+                const isAbsence = r.absenceType === 'unauthorized';
+                const min = r.lateMinutes || 0;
+                const colorIdx = users.indexOf(r.person) % AVATAR_COLORS.length;
+                const avatarColor = AVATAR_COLORS[colorIdx];
+
+                // 시간 표시
+                const timeStr = isAbsence
+                    ? '무단결근'
+                    : `${r.startTime || '—'} → ${r.endTime || '근무 중'}`;
+
+                // 외출 내역
+                const outings = getRecordOutings(r).filter(o => o.out);
+                const outStr = outings.length
+                    ? '외출: ' + outings.map(o => `${o.out}~${o.ret||'?'}`).join(', ')
+                    : '';
+
+                // 뱃지
+                let minCls, minLabel;
+                if (isAbsence)  { minCls = 'absence'; minLabel = '무단결근'; }
+                else if (min>0) { minCls = 'has-late'; minLabel = `+${min}분`; }
+                else            { minCls = 'no-late';  minLabel = '정상'; }
+
+                return `
+                    <div class="day-record-card">
+                        <div class="day-record-avatar" style="background:${avatarColor};">${escHtml(r.person.charAt(0))}</div>
+                        <div class="day-record-info">
+                            <div class="day-record-name">${escHtml(r.person)}</div>
+                            <div class="day-record-times">${escHtml(timeStr)}</div>
+                            ${outStr ? `<div class="day-record-outings">${escHtml(outStr)}</div>` : ''}
+                            ${r.notes ? `<div class="day-record-notes">📝 ${escHtml(r.notes)}</div>` : ''}
+                        </div>
+                        <span class="day-record-min ${minCls}">${minLabel}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        document.getElementById('dayModalOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDayModal(e) {
+        if (e && e.target !== document.getElementById('dayModalOverlay')) return;
+        document.getElementById('dayModalOverlay').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
     // ──────────────────────────────────────────────────
     // 직원 평가 모달
     // ──────────────────────────────────────────────────
@@ -1036,6 +1235,7 @@
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
             document.getElementById('modalOverlay').classList.remove('open');
+            document.getElementById('dayModalOverlay').classList.remove('open');
             document.body.style.overflow = '';
         }
     });
@@ -1357,8 +1557,18 @@
             cell.setAttribute('aria-label', `${m + 1}월 ${day}일${hasRecord ? ' (기록 있음)' : ''}`);
             cell.setAttribute('tabindex', '0');
 
-            cell.addEventListener('click', () => selectDate(dateStr));
-            cell.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') selectDate(dateStr); });
+            cell.addEventListener('click', () => {
+                if (hasRecord) {
+                    openDayModal(dateStr);
+                } else {
+                    selectDate(dateStr);
+                }
+            });
+            cell.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    hasRecord ? openDayModal(dateStr) : selectDate(dateStr);
+                }
+            });
 
             grid.appendChild(cell);
         }
