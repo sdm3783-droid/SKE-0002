@@ -625,12 +625,13 @@
 <!-- 사이드바 -->
 <aside class="sidebar">
     <div class="sidebar-logo">🕐</div>
-    <div class="sidebar-icon active" title="대시보드">📊</div>
-    <div class="sidebar-icon" title="달력">📅</div>
-    <div class="sidebar-icon" title="통계">📈</div>
-    <div class="sidebar-icon" title="기록">📋</div>
+    <div class="sidebar-icon active" title="대시보드" onclick="navTo('dashboard', this)">📊</div>
+    <div class="sidebar-icon" title="달력" onclick="navTo('section-calendar', this)">📅</div>
+    <div class="sidebar-icon" title="통계" onclick="navTo('section-stats', this)">📈</div>
+    <div class="sidebar-icon" title="기록" onclick="navTo('section-records', this)">📋</div>
+    <div class="sidebar-icon" title="입력" onclick="navTo('section-form', this)">✏️</div>
     <div class="sidebar-bottom">
-        <div class="sidebar-icon" title="설정">⚙️</div>
+        <div class="sidebar-icon" title="맨 위로" onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆️</div>
     </div>
 </aside>
 
@@ -661,12 +662,12 @@
             <div class="left-col">
 
                 <!-- 달력 -->
-                <div class="glass-card" role="region" aria-label="달력">
+                <div class="glass-card" id="section-calendar" role="region" aria-label="달력">
                     <div id="calendarGrid" class="calendar-grid" role="grid" aria-label="날짜 선택"></div>
                 </div>
 
                 <!-- 기록 테이블 -->
-                <div class="glass-card" role="region" aria-label="기록 목록">
+                <div class="glass-card" id="section-records" role="region" aria-label="기록 목록">
                     <div class="card-header">
                         📋 기록 목록
                         <span id="curFilter" aria-live="polite"></span>
@@ -698,7 +699,7 @@
             <div class="right-col">
 
                 <!-- 입력 폼 -->
-                <div class="glass-card" role="region" aria-label="근태 입력">
+                <div class="glass-card" id="section-form" role="region" aria-label="근태 입력">
                     <div class="card-header">⏱ 근태 입력</div>
                     <div class="card-body">
 
@@ -742,7 +743,7 @@
                 </div>
 
                 <!-- 통계 -->
-                <div class="glass-card" role="region" aria-label="이탈 현황">
+                <div class="glass-card" id="section-stats" role="region" aria-label="이탈 현황">
                     <div class="card-header">📊 이탈 현황</div>
                     <div class="card-body">
                         <div class="unit-toggle" role="group" aria-label="표시 단위">
@@ -765,6 +766,28 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
+    // ──────────────────────────────────────────────────
+    // 사이드바 네비게이션
+    // ──────────────────────────────────────────────────
+    function navTo(target, el) {
+        // active 클래스 이동
+        document.querySelectorAll('.sidebar-icon').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+
+        if (target === 'dashboard') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        const section = document.getElementById(target);
+        if (section) {
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // 잠깐 하이라이트
+            section.style.outline = '2px solid #a5b4fc';
+            section.style.outlineOffset = '2px';
+            setTimeout(() => { section.style.outline = ''; section.style.outlineOffset = ''; }, 1200);
+        }
+    }
+
     // ──────────────────────────────────────────────────
     // Firebase 설정
     // ──────────────────────────────────────────────────
