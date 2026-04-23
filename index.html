@@ -579,29 +579,33 @@
         .summary-card { display: none; }
 
         /* CSS 바 차트 */
-        .css-bar-chart { display: flex; flex-direction: column; gap: 11px; }
-        .css-bar-top {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 4px;
+        .css-bar-chart {
+            display: flex; flex-direction: row; align-items: flex-end;
+            gap: 8px; height: 160px; padding: 0 4px 0;
+        }
+        .css-bar-item {
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: flex-end; flex: 1; height: 100%; cursor: pointer;
+        }
+        .css-bar-val {
+            font-size: 10px; color: #94a3b8; margin-bottom: 4px;
+            text-align: center; white-space: nowrap;
+        }
+        .css-bar-track {
+            width: 100%; background: #f1f5f9; border-radius: 6px 6px 0 0;
+            overflow: hidden; display: flex; align-items: flex-end;
+        }
+        .css-bar-fill {
+            width: 100%; border-radius: 6px 6px 0 0;
+            transition: height 0.5s cubic-bezier(.4,0,.2,1);
         }
         .css-bar-name {
-            font-size: 12px; color: #64748b; font-weight: 500; cursor: pointer;
+            font-size: 11px; color: #64748b; font-weight: 600;
+            margin-top: 6px; text-align: center; cursor: pointer;
             transition: color 0.15s;
         }
         .css-bar-name:hover { color: #6366f1; }
-        .css-bar-val  { font-size: 11px; color: #94a3b8; }
-        .css-bar-track {
-            height: 5px;
-            background: #f1f5f9;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .css-bar-fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.5s cubic-bezier(.4,0,.2,1);
-        }
-        .bar-active .css-bar-name { color: #6366f1 !important; font-weight: 600; }
+        .bar-active .css-bar-name { color: #6366f1 !important; }
         .bar-active .css-bar-val  { color: #6366f1 !important; }
 
         /* ── 토스트 ── */
@@ -1774,21 +1778,22 @@
             const ratio = userTotal / maxVal;
 
             const fillStyle = ratio > 0.65
-                ? 'background:linear-gradient(90deg,#ef4444,#f87171);'
+                ? 'background:linear-gradient(180deg,#ef4444,#f87171);'
                 : ratio > 0.25
-                ? 'background:linear-gradient(90deg,#f59e0b,#fbbf24);'
-                : 'background:linear-gradient(90deg,#6366f1,#818cf8);';
+                ? 'background:linear-gradient(180deg,#f59e0b,#fbbf24);'
+                : 'background:linear-gradient(180deg,#6366f1,#818cf8);';
+
+            const barHeight = userTotal === 0 ? 0 : Math.max(pct, 4);
 
             const item = document.createElement('div');
             item.className = 'css-bar-item' + (isActive ? ' bar-active' : '');
+            item.onclick = () => setFilter(u);
             item.innerHTML = `
-                <div class="css-bar-top">
-                    <span class="css-bar-name" onclick="openModal('${escHtml(u)}')" title="${escHtml(u)} 평가 보기">${escHtml(u)}</span>
-                    <span class="css-bar-val" onclick="setFilter('${escHtml(u)}')" style="cursor:pointer;">${d.chartLabel}</span>
+                <span class="css-bar-val">${d.chartLabel}</span>
+                <div class="css-bar-track" style="height:${barHeight.toFixed(1)}%;">
+                    <div class="css-bar-fill" style="height:100%;${fillStyle}"></div>
                 </div>
-                <div class="css-bar-track">
-                    <div class="css-bar-fill" style="width:${pct < 1 && userTotal === 0 ? 0 : Math.max(pct, userTotal > 0 ? 4 : 0).toFixed(1)}%;${fillStyle}"></div>
-                </div>
+                <span class="css-bar-name" onclick="event.stopPropagation();openModal('${escHtml(u)}')" title="${escHtml(u)} 평가 보기">${escHtml(u)}</span>
             `;
             chart.appendChild(item);
         });
