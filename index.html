@@ -1424,11 +1424,14 @@
     // ──────────────────────────────────────────────────
     window.addEventListener('load', () => {
         const list = document.getElementById('personList');
-        users.forEach(u => {
+        users.forEach((u, i) => {
             const btn = document.createElement('button');
             btn.className = 'person-btn';
             btn.textContent = u;
             btn.setAttribute('aria-pressed', 'false');
+            const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+            btn.style.cssText = `border-color:${color}40;color:${color};background:${color}12;`;
+            btn.dataset.color = color;
             btn.addEventListener('click', () => {
                 selPerson = u;
                 updatePersonUI();
@@ -1469,8 +1472,14 @@
     function updatePersonUI() {
         document.querySelectorAll('.person-btn').forEach(btn => {
             const active = btn.textContent === selPerson;
+            const color = btn.dataset.color;
             btn.classList.toggle('active', active);
             btn.setAttribute('aria-pressed', String(active));
+            if (color) {
+                btn.style.cssText = active
+                    ? `border-color:${color};color:#fff;background:${color};`
+                    : `border-color:${color}40;color:${color};background:${color}12;`;
+            }
         });
     }
 
