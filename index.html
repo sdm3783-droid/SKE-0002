@@ -194,7 +194,7 @@
         /* ── 하단 2컬럼 ── */
         .bottom-grid {
             display: grid;
-            grid-template-columns: 1fr 380px;
+            grid-template-columns: 1fr 1fr;
             gap: 14px;
             flex: 1;
         }
@@ -914,45 +914,8 @@
         <!-- 하단 2컬럼 -->
         <div class="bottom-grid">
 
-            <!-- 좌측: 달력 + 기록 테이블 -->
+            <!-- 좌측: 입력 폼 + 기록 테이블 -->
             <div class="left-col">
-
-                <!-- 달력 -->
-                <div class="glass-card" id="section-calendar" role="region" aria-label="달력">
-                    <div id="calendarGrid" class="calendar-grid" role="grid" aria-label="날짜 선택"></div>
-                </div>
-
-                <!-- 기록 테이블 -->
-                <div class="glass-card" id="section-records" role="region" aria-label="기록 목록">
-                    <div class="card-header">
-                        📋 기록 목록
-                        <span id="curFilter" aria-live="polite"></span>
-                    </div>
-                    <div class="card-body" style="padding:0 0 8px;">
-                        <div class="table-scroll">
-                            <table role="table" aria-label="근태 기록">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">날짜</th>
-                                        <th scope="col">직원</th>
-                                        <th scope="col">출근</th>
-                                        <th scope="col">퇴근</th>
-                                        <th scope="col">외출</th>
-                                        <th scope="col">이탈</th>
-                                        <th scope="col">비고</th>
-                                        <th scope="col">삭제</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="listBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-            </div><!-- /left-col -->
-
-            <!-- 우측: 입력 폼 + 통계 -->
-            <div class="right-col">
 
                 <!-- 입력 폼 -->
                 <div class="glass-card" id="section-form" role="region" aria-label="근태 입력">
@@ -996,6 +959,43 @@
 
                         <button class="btn-save" onclick="doSave()" aria-label="저장하기">저장하기</button>
                     </div>
+                </div>
+
+                <!-- 기록 테이블 -->
+                <div class="glass-card" id="section-records" role="region" aria-label="기록 목록">
+                    <div class="card-header">
+                        📋 기록 목록
+                        <span id="curFilter" aria-live="polite"></span>
+                    </div>
+                    <div class="card-body" style="padding:0 0 8px;">
+                        <div class="table-scroll">
+                            <table role="table" aria-label="근태 기록">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">날짜</th>
+                                        <th scope="col">직원</th>
+                                        <th scope="col">출근</th>
+                                        <th scope="col">퇴근</th>
+                                        <th scope="col">외출</th>
+                                        <th scope="col">이탈</th>
+                                        <th scope="col">비고</th>
+                                        <th scope="col">삭제</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /left-col -->
+
+            <!-- 우측: 달력 + 통계 -->
+            <div class="right-col">
+
+                <!-- 달력 -->
+                <div class="glass-card" id="section-calendar" role="region" aria-label="달력">
+                    <div id="calendarGrid" class="calendar-grid" role="grid" aria-label="날짜 선택"></div>
                 </div>
 
                 <!-- 통계 -->
