@@ -1750,16 +1750,19 @@
             summaryBox.appendChild(card);
         });
 
-        // CSS 바 차트
+        // CSS 바 차트 (이탈시간 높은 순 정렬)
+        const sortedUsers = users.map((u, i) => ({ u, total: totals[i] }))
+            .sort((a, b) => b.total - a.total);
         const maxVal = Math.max(...totals, 1);
         const chart = document.getElementById('cssBarChart');
         chart.innerHTML = '';
 
-        users.forEach((u, i) => {
+        sortedUsers.forEach(({ u, total: userTotal }) => {
+            const i = users.indexOf(u);
             const d = calcDisplay(totals[i]);
-            const pct = (totals[i] / maxVal) * 100;
+            const pct = (userTotal / maxVal) * 100;
             const isActive = filterName === u;
-            const ratio = totals[i] / maxVal;
+            const ratio = userTotal / maxVal;
 
             const fillStyle = ratio > 0.65
                 ? 'background:linear-gradient(90deg,#ef4444,#f87171);'
@@ -1775,7 +1778,7 @@
                     <span class="css-bar-val" onclick="setFilter('${escHtml(u)}')" style="cursor:pointer;">${d.chartLabel}</span>
                 </div>
                 <div class="css-bar-track">
-                    <div class="css-bar-fill" style="width:${pct < 1 && totals[i] === 0 ? 0 : Math.max(pct, totals[i] > 0 ? 4 : 0).toFixed(1)}%;${fillStyle}"></div>
+                    <div class="css-bar-fill" style="width:${pct < 1 && userTotal === 0 ? 0 : Math.max(pct, userTotal > 0 ? 4 : 0).toFixed(1)}%;${fillStyle}"></div>
                 </div>
             `;
             chart.appendChild(item);
