@@ -4,757 +4,1379 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>언제오시나?</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 10px; }
+        /* ── 리셋 ── */
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
-        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 10px; text-align: center; }
-        .header h1 { font-size: 1.3rem; margin-bottom: 5px; }
-        .header p { font-size: 0.8rem; opacity: 0.9; }
-
-        .main-content { display: flex; flex-direction: column; gap: 15px; padding: 15px; }
-        @media (min-width: 900px) {
-            .main-content { display: grid; grid-template-columns: 1fr 1fr; }
-            .full-width { grid-column: 1 / -1; }
+        /* ── 기본 ── */
+        body {
+            font-family: -apple-system, 'Pretendard', 'Noto Sans KR', 'Segoe UI', sans-serif;
+            background: #080c10;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
         }
 
-        .section { background: #fdfdfd; padding: 15px; border-radius: 12px; border: 1px solid #eee; }
-        .section h2 { color: #667eea; margin-bottom: 12px; font-size: 1.1rem; border-left: 4px solid #667eea; padding-left: 8px; }
+        /* ── 배경 글로우 ── */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::before {
+            width: 500px; height: 500px;
+            background: rgba(0,255,136,0.04);
+            top: -150px; right: 100px;
+        }
+        body::after {
+            width: 400px; height: 400px;
+            background: rgba(0,200,255,0.04);
+            bottom: -100px; left: 100px;
+        }
 
-        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .calendar-header button { padding: 5px 10px; background: #667eea; color: white; border: none; border-radius: 5px; font-size: 0.8rem; cursor: pointer; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-        .calendar-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 1px solid #f0f0f0; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; background: white; }
-        .calendar-day:hover { background: #f0f4ff; }
-        .calendar-day.selected { background: #667eea !important; color: white !important; }
-        .calendar-day.has-record { border-color: #ff6b6b; color: #ff6b6b; font-weight: bold; }
-        .calendar-day.sun { color: #ff4757; }
-        .calendar-day.sat { color: #3182ce; }
+        /* ── 사이드바 ── */
+        .sidebar {
+            width: 64px;
+            min-height: 100vh;
+            background: rgba(255,255,255,0.025);
+            border-right: 1px solid rgba(255,255,255,0.07);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 18px 0;
+            gap: 6px;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+        .sidebar-logo {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #00ff88, #00c8ff);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            margin-bottom: 14px;
+            box-shadow: 0 0 24px rgba(0,255,136,0.45);
+            flex-shrink: 0;
+        }
+        .sidebar-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #444;
+            border: 1px solid transparent;
+            flex-shrink: 0;
+        }
+        .sidebar-icon.active {
+            background: rgba(0,255,136,0.12);
+            border-color: rgba(0,255,136,0.35);
+            color: #00ff88;
+            box-shadow: 0 0 16px rgba(0,255,136,0.2);
+        }
+        .sidebar-icon:hover:not(.active) {
+            background: rgba(255,255,255,0.06);
+            color: #888;
+        }
+        .sidebar-bottom { margin-top: auto; }
 
-        .person-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px; }
-        .person-btn { padding: 10px 5px; border: 1px solid #ddd; border-radius: 5px; background: white; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: background 0.15s; }
-        .person-btn:hover { background: #f0f4ff; }
-        .person-btn.active { background: #667eea; color: white; border-color: #667eea; }
+        /* ── 메인 영역 ── */
+        .app-main {
+            margin-left: 64px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
 
-        .time-box { border: 1px dashed #667eea; padding: 10px; border-radius: 10px; background: #f9faff; margin-bottom: 10px; }
-        .time-row { display: flex; gap: 5px; margin-bottom: 5px; }
-        .time-input-group { flex: 1; }
-        .time-input-group label { display: block; font-size: 0.7rem; margin-bottom: 2px; color: #666; }
-        .time-input-group input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.85rem; }
+        /* ── 탑바 ── */
+        .topbar {
+            height: 54px;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 10px;
+            position: sticky; top: 0;
+            backdrop-filter: blur(20px);
+            z-index: 50;
+            flex-shrink: 0;
+        }
+        .topbar-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #e2e8f0;
+            letter-spacing: -0.3px;
+        }
+        .live-badge {
+            display: flex; align-items: center; gap: 5px;
+            background: rgba(0,255,136,0.1);
+            border: 1px solid rgba(0,255,136,0.3);
+            border-radius: 20px;
+            padding: 3px 9px;
+            font-size: 10px;
+            color: #00ff88;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .live-dot {
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 6px #00ff88;
+            animation: livePulse 1.5s infinite;
+        }
+        @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+        .topbar-right {
+            margin-left: auto;
+            display: flex; align-items: center; gap: 8px;
+        }
+        #monthLabel {
+            font-size: 13px;
+            color: #ccc;
+            font-weight: 600;
+            min-width: 100px;
+            text-align: center;
+        }
+        .nav-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 7px;
+            padding: 5px 11px;
+            font-size: 12px;
+            color: #777;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.09); color: #bbb; }
 
-        textarea { width: 100%; border: 1px solid #ccc; border-radius: 5px; padding: 6px; font-size: 0.85rem; resize: vertical; }
-        .btn-save { background: #667eea; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; font-size: 1rem; transition: background 0.15s; }
-        .btn-save:hover { background: #5568d3; }
+        /* ── 콘텐츠 ── */
+        .content {
+            flex: 1;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
 
-        /* 저장 성공 토스트 메시지 */
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(60px); background: #323232; color: white; padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; opacity: 0; transition: all 0.3s ease; z-index: 9999; pointer-events: none; }
-        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        /* ── 직원 상태 카드 ── */
+        .status-cards {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        .status-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: rgba(255,255,255,0.06);
+            transition: background 0.3s;
+        }
+        .status-card.ok::before   { background: linear-gradient(90deg,#00ff88,transparent); }
+        .status-card.late::before { background: linear-gradient(90deg,#ff3b30,transparent); }
+        .status-card.out::before  { background: linear-gradient(90deg,#ffc800,transparent); }
+        .status-card:hover { border-color: rgba(255,255,255,0.14); transform: translateY(-1px); }
+        .status-card.selected-card {
+            border-color: rgba(0,255,136,0.4);
+            background: rgba(0,255,136,0.06);
+        }
+        .sc-name   { font-size: 14px; font-weight: 700; color: #e2e8f0; margin-bottom: 3px; }
+        .sc-status { font-size: 11px; font-weight: 600; color: #444; }
+        .sc-time   { font-size: 10px; color: #3a3a3a; margin-top: 3px; }
+        .status-card.ok .sc-status   { color: #00ff88; }
+        .status-card.late .sc-status { color: #ff3b30; }
+        .status-card.out .sc-status  { color: #ffc800; }
+        .status-card.ok .sc-time     { color: rgba(0,255,136,0.5); }
+        .status-card.late .sc-time   { color: rgba(255,59,48,0.5); }
+        .status-card.out .sc-time    { color: rgba(255,200,0,0.5); }
 
-        .chart-container { height: 180px; margin-bottom: 10px; }
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 5px; }
-        .summary-card { background: white; padding: 8px; border-radius: 8px; border: 1px solid #eee; text-align: center; font-size: 0.8rem; cursor: pointer; transition: background 0.15s; }
-        .summary-card:hover { background: #f0f4ff; }
-        .summary-card.active { border-color: #667eea; background: #f0f4ff; }
-        .summary-card .score-min { font-weight: bold; color: #667eea; font-size: 0.85rem; }
-        .summary-card .score-hour { color: #888; font-size: 0.72rem; margin-top: 1px; }
-        .summary-card .score-day { color: #ff6b35; font-size: 0.72rem; font-weight: bold; margin-top: 2px; }
+        /* ── 하단 2컬럼 ── */
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 14px;
+            flex: 1;
+        }
+        .left-col  { display: flex; flex-direction: column; gap: 14px; }
+        .right-col { display: flex; flex-direction: column; gap: 14px; }
 
-        /* 단위 토글 버튼 */
-        .unit-toggle { display: flex; gap: 5px; margin-bottom: 10px; }
-        .unit-btn { padding: 4px 10px; border: 1px solid #667eea; border-radius: 20px; background: white; color: #667eea; font-size: 0.75rem; cursor: pointer; transition: all 0.15s; }
-        .unit-btn.active { background: #667eea; color: white; }
+        /* ── 공통 글래스 카드 ── */
+        .glass-card {
+            background: rgba(255,255,255,0.028);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            backdrop-filter: blur(8px);
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 11px 16px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.055);
+            font-size: 10px;
+            font-weight: 600;
+            color: #555;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: flex; align-items: center; gap: 7px;
+        }
+        .card-body { padding: 14px 16px; }
 
-        /* 테이블 이탈 셀 */
-        .late-detail { line-height: 1.5; }
-        .late-detail .d-min { color: #ff4757; font-weight: bold; }
-        .late-detail .d-hour { color: #888; font-size: 0.7rem; }
-        .late-detail .d-day { color: #ff6b35; font-size: 0.7rem; font-weight: bold; }
+        /* ── 달력 ── */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px;
+            padding: 10px 12px 12px;
+        }
+        .cal-dow {
+            text-align: center;
+            font-size: 9px;
+            font-weight: 600;
+            color: #3a3a3a;
+            padding: 3px 0 5px;
+            letter-spacing: 0.5px;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px;
+            border-radius: 7px;
+            cursor: pointer;
+            color: #3a3a3a;
+            position: relative;
+            transition: all 0.15s;
+            border: 1px solid transparent;
+            font-weight: 500;
+        }
+        .calendar-day:hover { background: rgba(255,255,255,0.06); color: #bbb; }
+        .calendar-day.sun { color: rgba(255,59,48,0.45); }
+        .calendar-day.sat { color: rgba(0,122,255,0.45); }
+        .calendar-day.has-record { color: #666; }
+        .calendar-day.has-record::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            width: 3px; height: 3px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 4px #00ff88;
+        }
+        .calendar-day.today {
+            background: rgba(0,255,136,0.1);
+            border-color: rgba(0,255,136,0.35);
+            color: #00ff88 !important;
+            font-weight: 700;
+        }
+        .calendar-day.selected {
+            background: rgba(0,200,255,0.12) !important;
+            border-color: rgba(0,200,255,0.4) !important;
+            color: #00c8ff !important;
+            font-weight: 700;
+            box-shadow: 0 0 10px rgba(0,200,255,0.15);
+        }
 
-        .table-scroll { width: 100%; overflow-x: auto; margin-top: 10px; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; font-size: 0.75rem; }
-        th { background: #f4f4f4; color: #666; }
+        /* ── 기록 테이블 ── */
+        .table-scroll { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 480px; }
+        th {
+            font-size: 9px;
+            font-weight: 600;
+            color: #3a3a3a;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-align: left;
+            padding: 6px 10px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.055);
+            white-space: nowrap;
+        }
+        td {
+            padding: 9px 10px;
+            font-size: 11px;
+            color: #666;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            vertical-align: middle;
+        }
         tbody tr { cursor: pointer; transition: background 0.1s; }
-        tbody tr:hover { background: #f9faff; }
-        .late-text { color: #ff4757; font-weight: bold; }
-        .btn-del { background: #ff4757; color: white; border: none; border-radius: 3px; padding: 3px 6px; cursor: pointer; font-size: 0.75rem; }
-        .btn-del:hover { background: #e0001a; }
-        .td-notes { cursor: text; min-width: 80px; }
-        .td-notes:hover { background: #fffbe6; }
-        .td-notes input { width: 100%; border: 1px solid #667eea; border-radius: 4px; padding: 3px 5px; font-size: 0.75rem; outline: none; }
+        tbody tr:hover td { background: rgba(255,255,255,0.025); color: #aaa; }
+        .late-text { color: #ff3b30; font-weight: 600; }
+        .late-detail { line-height: 1.6; }
+        .late-detail .d-min  { color: #ff3b30; font-weight: 600; }
+        .late-detail .d-hour { color: #444; font-size: 10px; }
+        .late-detail .d-day  { color: #ffc800; font-size: 10px; font-weight: 600; }
+        .btn-del {
+            background: rgba(255,59,48,0.12);
+            color: #ff3b30;
+            border: 1px solid rgba(255,59,48,0.22);
+            border-radius: 5px;
+            padding: 3px 8px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 600;
+            transition: all 0.15s;
+        }
+        .btn-del:hover { background: rgba(255,59,48,0.28); }
+        .td-notes { cursor: text; min-width: 70px; }
+        .td-notes:hover { color: #ccc; }
+        .td-notes input {
+            width: 100%;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(0,200,255,0.4);
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 11px;
+            color: #e2e8f0;
+            outline: none;
+            font-family: inherit;
+        }
+        .badge-absence {
+            display: inline-block;
+            background: rgba(255,59,48,0.15);
+            border: 1px solid rgba(255,59,48,0.3);
+            color: #ff3b30;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 10px;
+            margin-left: 3px;
+            vertical-align: middle;
+        }
 
-        /* 유효성 검사 에러 표시 */
-        .input-error { border-color: #ff4757 !important; }
-        .error-msg { color: #ff4757; font-size: 0.72rem; margin-top: 3px; }
+        /* ── 입력 폼 ── */
+        .form-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 600;
+            color: #555;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .form-group { margin-bottom: 12px; }
+
+        /* 직원 칩 */
+        .person-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 12px;
+        }
+        .person-btn {
+            padding: 5px 11px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: #555;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .person-btn:hover { background: rgba(255,255,255,0.08); color: #aaa; }
+        .person-btn.active {
+            background: rgba(0,255,136,0.12);
+            border-color: rgba(0,255,136,0.4);
+            color: #00ff88;
+        }
+
+        /* 선택된 날짜 */
+        .selected-date-label {
+            font-size: 11px;
+            color: #444;
+            margin-bottom: 10px;
+        }
+        #viewDate { color: #00c8ff; font-weight: 600; }
 
         /* 무단결근 */
-        .absence-check-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px 10px; background: #fff5f5; border: 1px solid #ffcdd2; border-radius: 8px; }
-        .absence-check-wrap input[type=checkbox] { width: 18px; height: 18px; accent-color: #ff4757; cursor: pointer; }
-        .absence-check-wrap label { font-size: 0.9rem; font-weight: bold; color: #ff4757; cursor: pointer; user-select: none; }
-        .time-box.disabled { opacity: 0.4; pointer-events: none; }
-        .badge-absence { display: inline-block; background: #ff4757; color: white; font-size: 0.7rem; font-weight: bold; padding: 1px 6px; border-radius: 10px; margin-left: 4px; vertical-align: middle; }
+        .absence-check-wrap {
+            display: flex; align-items: center; gap: 8px;
+            padding: 9px 12px;
+            background: rgba(255,59,48,0.06);
+            border: 1px solid rgba(255,59,48,0.18);
+            border-radius: 9px;
+            margin-bottom: 10px;
+        }
+        .absence-check-wrap input[type=checkbox] {
+            width: 15px; height: 15px;
+            accent-color: #ff3b30;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .absence-check-wrap label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #ff3b30;
+            cursor: pointer;
+            user-select: none;
+        }
 
-        /* 다중 외출 행 */
-        .outing-row { display: flex; gap: 5px; align-items: flex-end; margin-bottom: 5px; }
+        /* 시간 박스 */
+        .time-box {
+            border: 1px solid rgba(0,255,136,0.2);
+            border-radius: 10px;
+            padding: 10px;
+            background: rgba(0,255,136,0.025);
+            margin-bottom: 10px;
+        }
+        .time-box.disabled { opacity: 0.35; pointer-events: none; }
+        .time-row { display: flex; gap: 6px; margin-bottom: 6px; }
+        .time-input-group { flex: 1; }
+        .time-input-group label {
+            display: block;
+            font-size: 10px;
+            color: #555;
+            margin-bottom: 3px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .time-input-group input[type="time"] {
+            width: 100%;
+            padding: 7px 8px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 7px;
+            font-size: 12px;
+            color: #e2e8f0;
+            outline: none;
+            transition: all 0.2s;
+            font-family: inherit;
+            text-align: center;
+            color-scheme: dark;
+        }
+        .time-input-group input[type="time"]:focus {
+            border-color: rgba(0,255,136,0.4);
+            background: rgba(0,255,136,0.04);
+            box-shadow: 0 0 0 3px rgba(0,255,136,0.08);
+        }
+        .input-error {
+            border-color: rgba(255,59,48,0.6) !important;
+            background: rgba(255,59,48,0.05) !important;
+        }
+        .error-msg { color: #ff3b30; font-size: 10px; margin-top: 4px; }
+
+        /* 외출 행 */
+        .outing-row {
+            display: flex; gap: 5px; align-items: flex-end; margin-bottom: 5px;
+        }
         .outing-row .time-input-group { flex: 1; }
-        .btn-remove-outing { background: #ff4757; color: white; border: none; border-radius: 5px; padding: 6px 8px; cursor: pointer; font-size: 0.75rem; white-space: nowrap; align-self: flex-end; }
-        .btn-remove-outing:hover { background: #e0001a; }
-        .btn-add-outing { background: #f0f4ff; color: #667eea; border: 1px dashed #667eea; border-radius: 5px; padding: 6px 10px; cursor: pointer; font-size: 0.8rem; width: 100%; margin-top: 2px; }
-        .btn-add-outing:hover { background: #e0e8ff; }
+        .btn-remove-outing {
+            background: rgba(255,59,48,0.1);
+            color: #ff3b30;
+            border: 1px solid rgba(255,59,48,0.22);
+            border-radius: 7px;
+            padding: 7px 8px;
+            cursor: pointer;
+            font-size: 11px;
+            align-self: flex-end;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .btn-remove-outing:hover { background: rgba(255,59,48,0.22); }
+        .btn-add-outing {
+            width: 100%;
+            padding: 7px;
+            background: rgba(255,255,255,0.03);
+            border: 1px dashed rgba(0,255,136,0.22);
+            border-radius: 7px;
+            color: rgba(0,255,136,0.7);
+            font-size: 11px;
+            cursor: pointer;
+            margin-top: 2px;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+        .btn-add-outing:hover { background: rgba(0,255,136,0.05); border-color: rgba(0,255,136,0.4); color: #00ff88; }
+
+        /* 비고 */
+        textarea {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 7px 10px;
+            font-size: 12px;
+            color: #e2e8f0;
+            resize: vertical;
+            outline: none;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        textarea:focus {
+            border-color: rgba(0,255,136,0.35);
+            background: rgba(0,255,136,0.03);
+        }
+
+        /* 저장 버튼 */
+        .btn-save {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg,rgba(0,255,136,0.15),rgba(0,200,255,0.15));
+            border: 1px solid rgba(0,255,136,0.35);
+            border-radius: 10px;
+            color: #00ff88;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            font-family: inherit;
+            margin-top: 10px;
+        }
+        .btn-save:hover {
+            background: linear-gradient(135deg,rgba(0,255,136,0.25),rgba(0,200,255,0.25));
+            box-shadow: 0 0 20px rgba(0,255,136,0.18);
+        }
+
+        /* ── 통계 ── */
+        .unit-toggle {
+            display: flex; gap: 5px; margin-bottom: 12px;
+        }
+        .unit-btn {
+            padding: 4px 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.03);
+            color: #444;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .unit-btn.active {
+            background: rgba(0,255,136,0.12);
+            border-color: rgba(0,255,136,0.35);
+            color: #00ff88;
+        }
+        #curFilter {
+            font-size: 10px;
+            color: #ff3b30;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+        /* summaryBox: JS 호환성 유지 (숨김) */
+        .summary-grid { display: none; }
+        .summary-card { display: none; }
+
+        /* CSS 바 차트 */
+        .css-bar-chart { display: flex; flex-direction: column; gap: 11px; }
+        .css-bar-top {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 4px;
+        }
+        .css-bar-name {
+            font-size: 12px; color: #999; font-weight: 500; cursor: pointer;
+            transition: color 0.15s;
+        }
+        .css-bar-name:hover { color: #00ff88; }
+        .css-bar-val  { font-size: 11px; color: #444; }
+        .css-bar-track {
+            height: 4px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .css-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s cubic-bezier(.4,0,.2,1);
+        }
+        .bar-active .css-bar-name { color: #00ff88 !important; }
+        .bar-active .css-bar-val  { color: #00ff88 !important; }
+
+        /* ── 토스트 ── */
+        .toast {
+            position: fixed;
+            bottom: 24px; left: 50%;
+            transform: translateX(-50%) translateY(50px);
+            background: rgba(20,28,38,0.96);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #e2e8f0;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 9999;
+            pointer-events: none;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ── 반응형 ── */
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .app-main { margin-left: 0; }
+            .status-cards { grid-template-columns: repeat(3,1fr); }
+            .bottom-grid { grid-template-columns: 1fr; }
+            .right-col { order: -1; }
+        }
+        @media (max-width: 520px) {
+            .status-cards { grid-template-columns: repeat(2,1fr); }
+            .content { padding: 12px; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🕐 언제오시나?</h1>
-            <p>8:30 출근 / 17:30 퇴근 / 점심시간(12:30~13:30) 자동 제외</p>
+
+<!-- 사이드바 -->
+<aside class="sidebar">
+    <div class="sidebar-logo">🕐</div>
+    <div class="sidebar-icon active" title="대시보드">📊</div>
+    <div class="sidebar-icon" title="달력">📅</div>
+    <div class="sidebar-icon" title="통계">📈</div>
+    <div class="sidebar-icon" title="기록">📋</div>
+    <div class="sidebar-bottom">
+        <div class="sidebar-icon" title="설정">⚙️</div>
+    </div>
+</aside>
+
+<!-- 메인 -->
+<div class="app-main">
+
+    <!-- 탑바 -->
+    <header class="topbar">
+        <span class="topbar-title">언제오시나?</span>
+        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+        <div class="topbar-right">
+            <button class="nav-btn" onclick="changeMonth(-1)" aria-label="이전 달">◀</button>
+            <span id="monthLabel" aria-live="polite"></span>
+            <button class="nav-btn" onclick="changeMonth(1)" aria-label="다음 달">▶</button>
         </div>
+    </header>
 
-        <div class="main-content">
-            <div class="section" role="region" aria-label="달력">
-                <div class="calendar-header">
-                    <button onclick="changeMonth(-1)" aria-label="이전 달">◀ 이전</button>
-                    <h2 id="monthLabel" style="border:none; margin:0; font-size:1rem;" aria-live="polite"></h2>
-                    <button onclick="changeMonth(1)" aria-label="다음 달">다음 ▶</button>
-                </div>
-                <div id="calendarGrid" class="calendar-grid" role="grid" aria-label="날짜 선택"></div>
-            </div>
+    <!-- 콘텐츠 -->
+    <div class="content">
 
-            <div class="section" role="region" aria-label="근태 입력">
-                <h2>⏰ 정보 입력</h2>
-                <div id="personList" class="person-grid" role="group" aria-label="직원 선택"></div>
-                <div style="margin-bottom:8px; font-size:0.85rem;">
-                    날짜: <span id="viewDate" style="font-weight:bold; color:#667eea;" aria-live="polite">날짜 선택</span>
+        <!-- 직원 상태 카드 -->
+        <div class="status-cards" id="statusCards"></div>
+
+        <!-- 하단 2컬럼 -->
+        <div class="bottom-grid">
+
+            <!-- 좌측: 달력 + 기록 테이블 -->
+            <div class="left-col">
+
+                <!-- 달력 -->
+                <div class="glass-card" role="region" aria-label="달력">
+                    <div id="calendarGrid" class="calendar-grid" role="grid" aria-label="날짜 선택"></div>
                 </div>
 
-                <div class="absence-check-wrap">
-                    <input type="checkbox" id="chkAbsence" onchange="toggleAbsence()" aria-label="무단결근 여부">
-                    <label for="chkAbsence">무단결근 (1일 연차 480분 자동 적용)</label>
-                </div>
-                <div class="time-box" id="timeBox">
-                    <div class="time-row">
-                        <div class="time-input-group">
-                            <label for="st">출근</label>
-                            <input type="time" id="st" aria-label="출근 시간">
-                        </div>
-                        <div class="time-input-group">
-                            <label for="et">퇴근</label>
-                            <input type="time" id="et" aria-label="퇴근 시간">
+                <!-- 기록 테이블 -->
+                <div class="glass-card" role="region" aria-label="기록 목록">
+                    <div class="card-header">
+                        📋 기록 목록
+                        <span id="curFilter" aria-live="polite"></span>
+                    </div>
+                    <div class="card-body" style="padding:0 0 8px;">
+                        <div class="table-scroll">
+                            <table role="table" aria-label="근태 기록">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">날짜</th>
+                                        <th scope="col">직원</th>
+                                        <th scope="col">출근</th>
+                                        <th scope="col">퇴근</th>
+                                        <th scope="col">외출</th>
+                                        <th scope="col">이탈</th>
+                                        <th scope="col">비고</th>
+                                        <th scope="col">삭제</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="listBody"></tbody>
+                            </table>
                         </div>
                     </div>
-                    <div id="outingsContainer"></div>
-                    <button type="button" class="btn-add-outing" onclick="addOutingRow()" aria-label="외출 추가">+ 외출 추가</button>
-                    <div id="timeError" class="error-msg" role="alert" aria-live="assertive"></div>
                 </div>
-                <div>
-                    <label for="memo" style="font-size:0.75rem; color:#666;">비고</label>
-                    <textarea id="memo" rows="2" aria-label="비고"></textarea>
+
+            </div><!-- /left-col -->
+
+            <!-- 우측: 입력 폼 + 통계 -->
+            <div class="right-col">
+
+                <!-- 입력 폼 -->
+                <div class="glass-card" role="region" aria-label="근태 입력">
+                    <div class="card-header">⏱ 근태 입력</div>
+                    <div class="card-body">
+
+                        <div class="form-group">
+                            <label class="form-label">직원 선택</label>
+                            <div id="personList" class="person-grid" role="group" aria-label="직원 선택"></div>
+                        </div>
+
+                        <div class="selected-date-label">
+                            날짜: <span id="viewDate" aria-live="polite">날짜 선택</span>
+                        </div>
+
+                        <div class="absence-check-wrap">
+                            <input type="checkbox" id="chkAbsence" onchange="toggleAbsence()" aria-label="무단결근 여부">
+                            <label for="chkAbsence">무단결근 (480분 연차 자동 적용)</label>
+                        </div>
+
+                        <div class="time-box" id="timeBox">
+                            <div class="time-row">
+                                <div class="time-input-group">
+                                    <label for="st">출근</label>
+                                    <input type="time" id="st" aria-label="출근 시간">
+                                </div>
+                                <div class="time-input-group">
+                                    <label for="et">퇴근</label>
+                                    <input type="time" id="et" aria-label="퇴근 시간">
+                                </div>
+                            </div>
+                            <div id="outingsContainer"></div>
+                            <button type="button" class="btn-add-outing" onclick="addOutingRow()" aria-label="외출 추가">＋ 외출 추가</button>
+                            <div id="timeError" class="error-msg" role="alert" aria-live="assertive"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="memo">비고</label>
+                            <textarea id="memo" rows="2" aria-label="비고"></textarea>
+                        </div>
+
+                        <button class="btn-save" onclick="doSave()" aria-label="저장하기">저장하기</button>
+                    </div>
                 </div>
-                <button class="btn-save" onclick="doSave()" aria-label="저장하기">저장하기</button>
-            </div>
 
-            <div class="section full-width" role="region" aria-label="통계 및 기록">
-                <h2>📊 인원별 이탈 시간</h2>
-                <div class="unit-toggle" role="group" aria-label="표시 단위 선택">
-                    <button class="unit-btn active" onclick="setUnit('min')"  id="unitMin">분</button>
-                    <button class="unit-btn"        onclick="setUnit('hour')" id="unitHour">시간</button>
-                    <button class="unit-btn"        onclick="setUnit('day')"  id="unitDay">일(연차)</button>
+                <!-- 통계 -->
+                <div class="glass-card" role="region" aria-label="이탈 현황">
+                    <div class="card-header">📊 이탈 현황</div>
+                    <div class="card-body">
+                        <div class="unit-toggle" role="group" aria-label="표시 단위">
+                            <button class="unit-btn active" onclick="setUnit('min')"  id="unitMin">분</button>
+                            <button class="unit-btn"        onclick="setUnit('hour')" id="unitHour">시간</button>
+                            <button class="unit-btn"        onclick="setUnit('day')"  id="unitDay">일</button>
+                        </div>
+                        <div id="cssBarChart" class="css-bar-chart"></div>
+                        <!-- summaryBox: JS 호환성 유지 (숨김) -->
+                        <div id="summaryBox" class="summary-grid" style="display:none;"></div>
+                    </div>
                 </div>
-                <div class="chart-container"><canvas id="barChart" role="img" aria-label="인원별 이탈 시간 막대 그래프"></canvas></div>
-                <div id="summaryBox" class="summary-grid" role="group" aria-label="직원별 이탈 시간 필터"></div>
 
-                <h2 style="margin-top:15px;">📝 기록 목록 <span id="curFilter" style="font-size:0.7rem; color:#ff4757;" aria-live="polite"></span></h2>
-                <div class="table-scroll">
-                    <table role="table" aria-label="근태 기록">
-                        <thead>
-                            <tr>
-                                <th scope="col">날짜</th><th scope="col">직원</th><th scope="col">출근</th>
-                                <th scope="col">퇴근</th><th scope="col">외출내역</th>
-                                <th scope="col">지각/조퇴/외출</th><th scope="col">비고</th><th scope="col">삭제</th>
-                            </tr>
-                        </thead>
-                        <tbody id="listBody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+            </div><!-- /right-col -->
+        </div><!-- /bottom-grid -->
+    </div><!-- /content -->
+</div><!-- /app-main -->
 
-    <!-- 토스트 알림 -->
-    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+<!-- 토스트 -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <script>
-        // ──────────────────────────────────────────────────
-        // Firebase 설정
-        // 보안: Firebase Console > Realtime Database > Rules 에서
-        // 인증된 사용자만 읽기/쓰기 가능하도록 제한 권장
-        // ──────────────────────────────────────────────────
-        const firebaseConfig = {
-            apiKey: "AIzaSyCkp4Odbptw0v9EdDqcVogv_pVoLNc2ef4",
-            authDomain: "ske-0002.firebaseapp.com",
-            databaseURL: "https://ske-0002-default-rtdb.firebaseio.com",
-            projectId: "ske-0002",
-            storageBucket: "ske-0002.firebasestorage.app",
-            messagingSenderId: "554932618834",
-            appId: "1:554932618834:web:a90d739bedabd71424c18b"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+<script>
+    // ──────────────────────────────────────────────────
+    // Firebase 설정
+    // ──────────────────────────────────────────────────
+    const firebaseConfig = {
+        apiKey: "AIzaSyCkp4Odbptw0v9EdDqcVogv_pVoLNc2ef4",
+        authDomain: "ske-0002.firebaseapp.com",
+        databaseURL: "https://ske-0002-default-rtdb.firebaseio.com",
+        projectId: "ske-0002",
+        storageBucket: "ske-0002.firebasestorage.app",
+        messagingSenderId: "554932618834",
+        appId: "1:554932618834:web:a90d739bedabd71424c18b"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-        // ──────────────────────────────────────────────────
-        // 상태 변수
-        // ──────────────────────────────────────────────────
-        let allRecords = [];
-        let curDate = new Date();
-        let selDate = null;
-        let selPerson = '';
-        let filterName = '';
-        let chartObj = null;
-        let dbListener = null;
+    // ──────────────────────────────────────────────────
+    // 상태 변수
+    // ──────────────────────────────────────────────────
+    let allRecords = [];
+    let curDate = new Date();
+    let selDate = null;
+    let selPerson = '';
+    let filterName = '';
+    let dbListener = null;
 
-        const users = ['박', '이', '1째', '2째', '송프리'];
+    const users = ['박', '이', '1째', '2째', '송프리'];
 
-        // ──────────────────────────────────────────────────
-        // 유틸리티
-        // ──────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────
+    // 유틸리티
+    // ──────────────────────────────────────────────────
+    function timeToMinutes(timeStr) {
+        if (!timeStr) return 0;
+        const [h, m] = timeStr.split(':').map(Number);
+        return h * 60 + m;
+    }
 
-        // 시간 문자열(HH:MM)을 분 단위 정수로 변환
-        function timeToMinutes(timeStr) {
-            if (!timeStr) return 0;
-            const [h, m] = timeStr.split(':').map(Number);
-            return h * 60 + m;
-        }
+    function getRecordOutings(record) {
+        if (record.outings && record.outings.length) return record.outings;
+        if (record.outTime) return [{ out: record.outTime, ret: record.returnTime || '' }];
+        return [];
+    }
 
-        // 구 형식(outTime/returnTime) 또는 신 형식(outings 배열) 모두 처리
-        function getRecordOutings(record) {
-            if (record.outings && record.outings.length) return record.outings;
-            if (record.outTime) return [{ out: record.outTime, ret: record.returnTime || '' }];
-            return [];
-        }
+    const WORK_MINS_PER_DAY = 480;
+    let curUnit = 'min';
 
-        // ── 단위 변환 ──────────────────────────────────────
-        const WORK_MINS_PER_DAY = 480; // 1근무일 = 8시간 = 480분
-        let curUnit = 'min'; // 'min' | 'hour' | 'day'
-
-        function setUnit(unit) {
-            curUnit = unit;
-            ['min','hour','day'].forEach(u => {
-                document.getElementById('unit' + u.charAt(0).toUpperCase() + u.slice(1))
-                    .classList.toggle('active', u === unit);
-            });
-            renderStats();
-            renderTable();
-        }
-
-        // 분 → {min, hourStr, dayStr, chartVal, chartLabel}
-        function calcDisplay(totalMin) {
-            const h = Math.floor(totalMin / 60);
-            const m = totalMin % 60;
-            const hourStr = h > 0 ? `${h}시간 ${m}분` : `${m}분`;
-            const day = (totalMin / WORK_MINS_PER_DAY).toFixed(2);
-            const chartVal = curUnit === 'min'  ? totalMin
-                           : curUnit === 'hour' ? +(totalMin / 60).toFixed(2)
-                           :                     +(totalMin / WORK_MINS_PER_DAY).toFixed(2);
-            const chartLabel = curUnit === 'min'  ? `${totalMin}분`
-                             : curUnit === 'hour' ? `${hourStr}`
-                             :                     `${day}일`;
-            return { totalMin, hourStr, day, chartVal, chartLabel };
-        }
-
-        // XSS 방지: 사용자 입력 데이터를 HTML에 삽입하기 전 이스케이프
-        function escHtml(str) {
-            if (str == null) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
-
-        // 토스트 메시지 표시 (alert 대신 사용)
-        function showToast(msg, duration = 2000) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), duration);
-        }
-
-        // ──────────────────────────────────────────────────
-        // 무단결근 토글
-        // ──────────────────────────────────────────────────
-        function toggleAbsence() {
-            const checked = document.getElementById('chkAbsence').checked;
-            document.getElementById('timeBox').classList.toggle('disabled', checked);
-        }
-
-        // ──────────────────────────────────────────────────
-        // 다중 외출 행 관리
-        // ──────────────────────────────────────────────────
-        function addOutingRow(outVal = '', retVal = '') {
-            const container = document.getElementById('outingsContainer');
-            const idx = container.children.length;
-            const row = document.createElement('div');
-            row.className = 'outing-row';
-            row.innerHTML = `
-                <div class="time-input-group">
-                    <label>외출 ${idx + 1}</label>
-                    <input type="time" class="outing-out" value="${escHtml(outVal)}" aria-label="외출 ${idx + 1} 시간">
-                </div>
-                <div class="time-input-group">
-                    <label>복귀 ${idx + 1}</label>
-                    <input type="time" class="outing-ret" value="${escHtml(retVal)}" aria-label="복귀 ${idx + 1} 시간">
-                </div>
-                <button type="button" class="btn-remove-outing" onclick="removeOutingRow(this)" aria-label="외출 행 삭제">✕</button>
-            `;
-            container.appendChild(row);
-            updateOutingLabels();
-        }
-
-        function removeOutingRow(btn) {
-            btn.closest('.outing-row').remove();
-            updateOutingLabels();
-        }
-
-        function updateOutingLabels() {
-            document.querySelectorAll('#outingsContainer .outing-row').forEach((row, i) => {
-                row.querySelector('.outing-out').previousElementSibling.textContent = `외출 ${i + 1}`;
-                row.querySelector('.outing-ret').previousElementSibling.textContent = `복귀 ${i + 1}`;
-            });
-        }
-
-        // DOM에서 외출 목록 수집
-        function getOutingsFromDOM() {
-            return Array.from(document.querySelectorAll('#outingsContainer .outing-row')).map(row => ({
-                out: row.querySelector('.outing-out').value,
-                ret: row.querySelector('.outing-ret').value
-            })).filter(o => o.out || o.ret); // 둘 다 비어있는 행 제외
-        }
-
-        // ──────────────────────────────────────────────────
-        // 초기화
-        // ──────────────────────────────────────────────────
-        window.addEventListener('load', () => {
-            const list = document.getElementById('personList');
-            users.forEach(u => {
-                const btn = document.createElement('button');
-                btn.className = 'person-btn';
-                btn.textContent = u;
-                btn.setAttribute('aria-pressed', 'false');
-                btn.addEventListener('click', () => {
-                    selPerson = u;
-                    updatePersonUI();
-                    loadDetail();
-                });
-                list.appendChild(btn);
-            });
-
-            // Firebase 실시간 리스너 등록 (참조 저장 → unload 시 해제)
-            const ref = db.ref('attendance');
-            dbListener = ref.on('value', snap => {
-                const val = snap.val();
-                allRecords = [];
-                if (val) {
-                    Object.values(val).forEach(personData =>
-                        Object.values(personData).forEach(record => allRecords.push(record))
-                    );
-                }
-                refresh();
-            });
-
-            // 테이블 이벤트 위임 (XSS 방지: onclick 인라인 제거)
-            document.getElementById('listBody').addEventListener('click', handleTableClick);
-
-            // 기본 외출 행 1개 추가
-            addOutingRow();
+    function setUnit(unit) {
+        curUnit = unit;
+        ['min','hour','day'].forEach(u => {
+            document.getElementById('unit' + u.charAt(0).toUpperCase() + u.slice(1))
+                .classList.toggle('active', u === unit);
         });
+        renderStats();
+        renderTable();
+    }
 
-        // 페이지 이탈 시 Firebase 리스너 해제 (메모리 누수 방지)
-        window.addEventListener('beforeunload', () => {
-            if (dbListener) db.ref('attendance').off('value', dbListener);
+    function calcDisplay(totalMin) {
+        const h = Math.floor(totalMin / 60);
+        const m = totalMin % 60;
+        const hourStr = h > 0 ? `${h}시간 ${m}분` : `${m}분`;
+        const day = (totalMin / WORK_MINS_PER_DAY).toFixed(2);
+        const chartVal = curUnit === 'min'  ? totalMin
+                       : curUnit === 'hour' ? +(totalMin / 60).toFixed(2)
+                       :                     +(totalMin / WORK_MINS_PER_DAY).toFixed(2);
+        const chartLabel = curUnit === 'min'  ? `${totalMin}분`
+                         : curUnit === 'hour' ? `${hourStr}`
+                         :                     `${day}일`;
+        return { totalMin, hourStr, day, chartVal, chartLabel };
+    }
+
+    function escHtml(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function showToast(msg, duration = 2000) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), duration);
+    }
+
+    // ──────────────────────────────────────────────────
+    // 무단결근 토글
+    // ──────────────────────────────────────────────────
+    function toggleAbsence() {
+        const checked = document.getElementById('chkAbsence').checked;
+        document.getElementById('timeBox').classList.toggle('disabled', checked);
+    }
+
+    // ──────────────────────────────────────────────────
+    // 다중 외출 행 관리
+    // ──────────────────────────────────────────────────
+    function addOutingRow(outVal = '', retVal = '') {
+        const container = document.getElementById('outingsContainer');
+        const idx = container.children.length;
+        const row = document.createElement('div');
+        row.className = 'outing-row';
+        row.innerHTML = `
+            <div class="time-input-group">
+                <label>외출 ${idx + 1}</label>
+                <input type="time" class="outing-out" value="${escHtml(outVal)}" aria-label="외출 ${idx + 1} 시간">
+            </div>
+            <div class="time-input-group">
+                <label>복귀 ${idx + 1}</label>
+                <input type="time" class="outing-ret" value="${escHtml(retVal)}" aria-label="복귀 ${idx + 1} 시간">
+            </div>
+            <button type="button" class="btn-remove-outing" onclick="removeOutingRow(this)" aria-label="외출 행 삭제">✕</button>
+        `;
+        container.appendChild(row);
+        updateOutingLabels();
+    }
+
+    function removeOutingRow(btn) {
+        btn.closest('.outing-row').remove();
+        updateOutingLabels();
+    }
+
+    function updateOutingLabels() {
+        document.querySelectorAll('#outingsContainer .outing-row').forEach((row, i) => {
+            row.querySelector('.outing-out').previousElementSibling.textContent = `외출 ${i + 1}`;
+            row.querySelector('.outing-ret').previousElementSibling.textContent = `복귀 ${i + 1}`;
         });
+    }
 
-        // ──────────────────────────────────────────────────
-        // UI 업데이트
-        // ──────────────────────────────────────────────────
-        function updatePersonUI() {
-            document.querySelectorAll('.person-btn').forEach(btn => {
-                const active = btn.textContent === selPerson;
-                btn.classList.toggle('active', active);
-                btn.setAttribute('aria-pressed', String(active));
-            });
-        }
+    function getOutingsFromDOM() {
+        return Array.from(document.querySelectorAll('#outingsContainer .outing-row')).map(row => ({
+            out: row.querySelector('.outing-out').value,
+            ret: row.querySelector('.outing-ret').value
+        })).filter(o => o.out || o.ret);
+    }
 
-        function refresh() {
-            renderCalendar();
-            renderStats();
-            renderTable();
-        }
-
-        function changeMonth(delta) {
-            curDate = new Date(curDate.getFullYear(), curDate.getMonth() + delta, 1);
-            refresh();
-        }
-
-        // ──────────────────────────────────────────────────
-        // 달력 렌더링
-        // ──────────────────────────────────────────────────
-        function renderCalendar() {
-            const y = curDate.getFullYear();
-            const m = curDate.getMonth();
-            document.getElementById('monthLabel').textContent = `${y}년 ${m + 1}월`;
-
-            const grid = document.getElementById('calendarGrid');
-            grid.innerHTML = '';
-
-            ['일', '월', '화', '수', '목', '금', '토'].forEach(d => {
-                const header = document.createElement('div');
-                header.style.cssText = 'text-align:center; font-size:0.7rem; color:#999;';
-                header.textContent = d;
-                header.setAttribute('role', 'columnheader');
-                grid.appendChild(header);
-            });
-
-            const firstDow = new Date(y, m, 1).getDay();
-            const lastDay = new Date(y, m + 1, 0).getDate();
-
-            for (let i = 0; i < firstDow; i++) {
-                grid.appendChild(document.createElement('div'));
-            }
-
-            for (let day = 1; day <= lastDay; day++) {
-                const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const hasRecord = allRecords.some(r => r.date === dateStr);
-                const dow = new Date(y, m, day).getDay();
-
-                const cell = document.createElement('div');
-                cell.className = 'calendar-day';
-                if (hasRecord) cell.classList.add('has-record');
-                if (dow === 0) cell.classList.add('sun');
-                if (dow === 6) cell.classList.add('sat');
-                if (selDate === dateStr) cell.classList.add('selected');
-                cell.textContent = day;
-                cell.setAttribute('role', 'gridcell');
-                cell.setAttribute('aria-label', `${m + 1}월 ${day}일${hasRecord ? ' (기록 있음)' : ''}`);
-                cell.setAttribute('tabindex', '0');
-
-                cell.addEventListener('click', () => selectDate(dateStr));
-                cell.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') selectDate(dateStr); });
-
-                grid.appendChild(cell);
-            }
-        }
-
-        function selectDate(dateStr) {
-            selDate = dateStr;
-            document.getElementById('viewDate').textContent = dateStr;
-            refresh();
-            loadDetail();
-        }
-
-        // ──────────────────────────────────────────────────
-        // 저장
-        // ──────────────────────────────────────────────────
-        function doSave() {
-            if (!selDate || !selPerson) {
-                showToast('날짜와 직원을 선택하세요!');
-                return;
-            }
-
-            const isAbsence = document.getElementById('chkAbsence').checked;
-            const errEl = document.getElementById('timeError');
-            errEl.textContent = '';
-
-            let missMinutes = 0;
-            let saveData = {
-                date: selDate,
-                person: selPerson,
-                notes: document.getElementById('memo').value
-            };
-
-            if (isAbsence) {
-                // 무단결근: 8시간(480분) 고정
-                missMinutes = 480;
-                saveData = { ...saveData, absenceType: 'unauthorized', startTime: '', endTime: '', outings: [], lateMinutes: 480 };
-            } else {
-                const s = document.getElementById('st').value;
-                const e = document.getElementById('et').value;
-
-                ['st', 'et'].forEach(id => document.getElementById(id).classList.remove('input-error'));
-                document.querySelectorAll('.outing-out, .outing-ret').forEach(el => el.classList.remove('input-error'));
-
-                if (s && e && timeToMinutes(s) >= timeToMinutes(e)) {
-                    document.getElementById('st').classList.add('input-error');
-                    document.getElementById('et').classList.add('input-error');
-                    errEl.textContent = '퇴근 시간이 출근 시간보다 빠를 수 없습니다.';
-                    return;
-                }
-
-                // 외출 행 유효성 검사 (각 행마다)
-                const rows = document.querySelectorAll('#outingsContainer .outing-row');
-                for (let i = 0; i < rows.length; i++) {
-                    const oEl = rows[i].querySelector('.outing-out');
-                    const rEl = rows[i].querySelector('.outing-ret');
-                    const o = oEl.value, r = rEl.value;
-                    if (o && !r) { rEl.classList.add('input-error'); errEl.textContent = `외출 ${i+1}: 복귀 시간을 입력해주세요.`; return; }
-                    if (!o && r) { oEl.classList.add('input-error'); errEl.textContent = `외출 ${i+1}: 외출 시간을 입력해주세요.`; return; }
-                    if (o && r && timeToMinutes(o) >= timeToMinutes(r)) {
-                        oEl.classList.add('input-error'); rEl.classList.add('input-error');
-                        errEl.textContent = `외출 ${i+1}: 복귀 시간이 외출 시간보다 빠를 수 없습니다.`; return;
-                    }
-                }
-
-                // 이탈 시간 계산 (다중 외출 합산)
-                if (s && timeToMinutes(s) > 510) missMinutes += (timeToMinutes(s) - 510);
-                if (e && timeToMinutes(e) < 1050) missMinutes += (1050 - timeToMinutes(e));
-
-                const outings = getOutingsFromDOM();
-                outings.forEach(({ out, ret }) => {
-                    if (out && ret) {
-                        const oMin = timeToMinutes(out), rMin = timeToMinutes(ret);
-                        const lunchOverlap = Math.max(0, Math.min(rMin, 810) - Math.max(oMin, 750));
-                        missMinutes += (rMin - oMin) - lunchOverlap;
-                    }
-                });
-
-                saveData = { ...saveData, absenceType: '', startTime: s, endTime: e, outings: outings.length ? outings : [], lateMinutes: missMinutes };
-            }
-
-            db.ref(`attendance/${selPerson}/${selDate}`).set(saveData).then(() => {
-                showToast('저장되었습니다.');
-                resetForm();
-            }).catch(() => {
-                showToast('저장 중 오류가 발생했습니다. 다시 시도해주세요.');
-            });
-        }
-
-        // 저장 후 입력 폼 초기화
-        function resetForm() {
-            // 무단결근 체크박스 해제
-            document.getElementById('chkAbsence').checked = false;
-            document.getElementById('timeBox').classList.remove('disabled');
-
-            ['st', 'et'].forEach(id => {
-                const el = document.getElementById(id);
-                el.value = '';
-                el.classList.remove('input-error');
-            });
-            // 외출 행 초기화 (1개 빈 행으로 리셋)
-            document.getElementById('outingsContainer').innerHTML = '';
-            addOutingRow();
-            document.getElementById('memo').value = '';
-            document.getElementById('timeError').textContent = '';
-            selDate = null;
-            selPerson = '';
-            document.getElementById('viewDate').textContent = '날짜 선택';
-            updatePersonUI();
-            refresh();
-        }
-
-        // ──────────────────────────────────────────────────
-        // 통계 렌더링
-        // ──────────────────────────────────────────────────
-        function renderStats() {
-            const totals = users.map(u =>
-                allRecords.filter(r => r.person === u).reduce((acc, cur) => acc + (cur.lateMinutes || 0), 0)
-            );
-
-            const summaryBox = document.getElementById('summaryBox');
-            summaryBox.innerHTML = '';
-            users.forEach((u, i) => {
-                const d = calcDisplay(totals[i]);
-                const card = document.createElement('div');
-                card.className = 'summary-card' + (filterName === u ? ' active' : '');
-                card.setAttribute('role', 'button');
-                card.setAttribute('tabindex', '0');
-                card.setAttribute('aria-pressed', String(filterName === u));
-                card.setAttribute('aria-label', `${u} ${d.totalMin}분 (${d.hourStr} / 연차 ${d.day}일) 필터`);
-
-                card.innerHTML = `
-                    <h3>${escHtml(u)}</h3>
-                    <div class="score-min">${d.totalMin}분</div>
-                    <div class="score-hour">${d.hourStr}</div>
-                    <div class="score-day">연차 ${d.day}일</div>
-                `;
-
-                card.addEventListener('click', () => setFilter(u));
-                card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') setFilter(u); });
-                summaryBox.appendChild(card);
-            });
-
-            const chartVals = totals.map(t => calcDisplay(t).chartVal);
-            const yLabel = curUnit === 'min' ? '분' : curUnit === 'hour' ? '시간' : '일(연차)';
-
-            const ctx = document.getElementById('barChart').getContext('2d');
-            if (chartObj) chartObj.destroy();
-            chartObj = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: users,
-                    datasets: [{ data: chartVals, backgroundColor: '#667eea', borderRadius: 5 }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => {
-                                    const d = calcDisplay(totals[ctx.dataIndex]);
-                                    return [`${d.totalMin}분`, d.hourStr, `연차 ${d.day}일`];
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { title: { display: true, text: yLabel, font: { size: 11 } } }
-                    }
-                }
-            });
-        }
-
-        function setFilter(name) {
-            filterName = (filterName === name) ? '' : name;
-            document.getElementById('curFilter').textContent = filterName ? `(${filterName} 필터 중)` : '';
-            renderStats();
-            renderTable();
-        }
-
-        // ──────────────────────────────────────────────────
-        // 기록 목록 렌더링 (XSS 방지: 이스케이프 적용)
-        // ──────────────────────────────────────────────────
-        function renderTable() {
-            const target = filterName
-                ? allRecords.filter(r => r.person === filterName)
-                : allRecords;
-
-            const sorted = target.slice().sort((a, b) => b.date.localeCompare(a.date));
-            const tbody = document.getElementById('listBody');
-            tbody.innerHTML = '';
-
-            sorted.forEach(r => {
-                const tr = document.createElement('tr');
-                // data 속성으로 날짜/직원 저장 (onclick 인라인 제거 → XSS 방지)
-                tr.dataset.date = r.date;
-                tr.dataset.person = r.person;
-
-                const totalMin = r.lateMinutes || 0;
-                const d = calcDisplay(totalMin);
-                const isAbsence = r.absenceType === 'unauthorized';
-                const outingsText = isAbsence
-                    ? '<span class="badge-absence">무단결근</span>'
-                    : (getRecordOutings(r)
-                        .filter(o => o.out)
-                        .map(o => `${escHtml(o.out)}~${escHtml(o.ret || '?')}`)
-                        .join('<br>') || '-');
-                const lateCell = totalMin > 0
-                    ? `<td class="late-detail">
-                           <span class="d-min">${totalMin}분</span>${isAbsence ? ' <span class="badge-absence">무단결근</span>' : ''}<br>
-                           <span class="d-hour">${d.hourStr}</span><br>
-                           <span class="d-day">연차 ${d.day}일</span>
-                       </td>`
-                    : `<td>-</td>`;
-                tr.innerHTML = `
-                    <td>${escHtml(r.date)}</td>
-                    <td>${escHtml(r.person)}</td>
-                    <td>${escHtml(r.startTime) || '-'}</td>
-                    <td>${escHtml(r.endTime) || '-'}</td>
-                    <td>${outingsText}</td>
-                    ${lateCell}
-                    <td class="td-notes" data-date="${escHtml(r.date)}" data-person="${escHtml(r.person)}" title="클릭하여 비고 수정">${escHtml(r.notes) || '<span style="color:#ccc">메모</span>'}</td>
-                    <td><button class="btn-del" data-date="${escHtml(r.date)}" data-person="${escHtml(r.person)}" aria-label="${escHtml(r.date)} ${escHtml(r.person)} 기록 삭제">삭제</button></td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // 테이블 이벤트 위임 처리
-        function handleTableClick(e) {
-            const delBtn = e.target.closest('.btn-del');
-            if (delBtn) {
-                e.stopPropagation();
-                const { date, person } = delBtn.dataset;
-                if (confirm(`[${person}] ${date} 기록을 삭제하시겠습니까?`)) {
-                    db.ref(`attendance/${person}/${date}`).remove()
-                        .then(() => showToast('삭제되었습니다.'))
-                        .catch(() => showToast('삭제 중 오류가 발생했습니다.'));
-                }
-                return;
-            }
-
-            // 비고 인라인 편집
-            const notesTd = e.target.closest('.td-notes');
-            if (notesTd && !notesTd.querySelector('input')) {
-                e.stopPropagation();
-                const { date, person } = notesTd.dataset;
-                const record = allRecords.find(x => x.date === date && x.person === person);
-                const currentVal = record?.notes || '';
-
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.value = currentVal;
-                notesTd.innerHTML = '';
-                notesTd.appendChild(input);
-                input.focus();
-
-                function saveNotes() {
-                    const newVal = input.value.trim();
-                    if (newVal === currentVal) { renderTable(); return; }
-                    db.ref(`attendance/${person}/${date}`).update({ notes: newVal })
-                        .then(() => showToast('비고 저장됨'))
-                        .catch(() => showToast('저장 오류'));
-                }
-                input.addEventListener('blur', saveNotes);
-                input.addEventListener('keydown', e => {
-                    if (e.key === 'Enter') { input.blur(); }
-                    if (e.key === 'Escape') { renderTable(); }
-                });
-                return;
-            }
-
-            const row = e.target.closest('tr');
-            if (row && row.dataset.date) {
-                selDate = row.dataset.date;
-                selPerson = row.dataset.person;
-                document.getElementById('viewDate').textContent = selDate;
+    // ──────────────────────────────────────────────────
+    // 초기화
+    // ──────────────────────────────────────────────────
+    window.addEventListener('load', () => {
+        const list = document.getElementById('personList');
+        users.forEach(u => {
+            const btn = document.createElement('button');
+            btn.className = 'person-btn';
+            btn.textContent = u;
+            btn.setAttribute('aria-pressed', 'false');
+            btn.addEventListener('click', () => {
+                selPerson = u;
                 updatePersonUI();
                 loadDetail();
-                refresh();
+                renderStatusCards();
+            });
+            list.appendChild(btn);
+        });
+
+        const ref = db.ref('attendance');
+        dbListener = ref.on('value', snap => {
+            const val = snap.val();
+            allRecords = [];
+            if (val) {
+                Object.values(val).forEach(personData =>
+                    Object.values(personData).forEach(record => allRecords.push(record))
+                );
             }
+            refresh();
+        });
+
+        document.getElementById('listBody').addEventListener('click', handleTableClick);
+        addOutingRow();
+    });
+
+    window.addEventListener('beforeunload', () => {
+        if (dbListener) db.ref('attendance').off('value', dbListener);
+    });
+
+    // ──────────────────────────────────────────────────
+    // UI 업데이트
+    // ──────────────────────────────────────────────────
+    function updatePersonUI() {
+        document.querySelectorAll('.person-btn').forEach(btn => {
+            const active = btn.textContent === selPerson;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-pressed', String(active));
+        });
+    }
+
+    function refresh() {
+        renderCalendar();
+        renderStats();
+        renderTable();
+        renderStatusCards();
+    }
+
+    function changeMonth(delta) {
+        curDate = new Date(curDate.getFullYear(), curDate.getMonth() + delta, 1);
+        refresh();
+    }
+
+    // ──────────────────────────────────────────────────
+    // 직원 상태 카드
+    // ──────────────────────────────────────────────────
+    function renderStatusCards() {
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+        const container = document.getElementById('statusCards');
+        if (!container) return;
+        container.innerHTML = '';
+
+        users.forEach(u => {
+            const rec = allRecords.find(r => r.date === todayStr && r.person === u);
+            const isSelected = selPerson === u;
+            let statusClass = '';
+            let statusText = '— 미기록';
+            let timeText = '—';
+
+            if (rec) {
+                const isAbsence = rec.absenceType === 'unauthorized';
+                if (isAbsence) {
+                    statusClass = 'late';
+                    statusText = '✕ 무단결근';
+                    timeText = '480분 연차';
+                } else if (rec.lateMinutes > 0) {
+                    statusClass = 'late';
+                    statusText = `▲ 이탈 ${rec.lateMinutes}분`;
+                    timeText = rec.startTime || '—';
+                } else if (rec.startTime && !rec.endTime) {
+                    statusClass = 'ok';
+                    statusText = '● 근무 중';
+                    timeText = rec.startTime + ' 출근';
+                } else if (rec.startTime && rec.endTime) {
+                    statusClass = 'ok';
+                    statusText = '✓ 퇴근 완료';
+                    timeText = `${rec.startTime}~${rec.endTime}`;
+                }
+            }
+
+            const card = document.createElement('div');
+            card.className = `status-card ${statusClass}${isSelected ? ' selected-card' : ''}`;
+            card.innerHTML = `
+                <div class="sc-name">${escHtml(u)}</div>
+                <div class="sc-status">${statusText}</div>
+                <div class="sc-time">${escHtml(timeText)}</div>
+            `;
+            card.addEventListener('click', () => {
+                selPerson = u;
+                updatePersonUI();
+                loadDetail();
+                renderStatusCards();
+            });
+            container.appendChild(card);
+        });
+    }
+
+    // ──────────────────────────────────────────────────
+    // 달력 렌더링
+    // ──────────────────────────────────────────────────
+    function renderCalendar() {
+        const y = curDate.getFullYear();
+        const m = curDate.getMonth();
+        document.getElementById('monthLabel').textContent = `${y}년 ${m + 1}월`;
+
+        const grid = document.getElementById('calendarGrid');
+        grid.innerHTML = '';
+
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+        ['일', '월', '화', '수', '목', '금', '토'].forEach(d => {
+            const header = document.createElement('div');
+            header.className = 'cal-dow';
+            header.textContent = d;
+            header.setAttribute('role', 'columnheader');
+            grid.appendChild(header);
+        });
+
+        const firstDow = new Date(y, m, 1).getDay();
+        const lastDay = new Date(y, m + 1, 0).getDate();
+
+        for (let i = 0; i < firstDow; i++) {
+            grid.appendChild(document.createElement('div'));
         }
 
-        // ──────────────────────────────────────────────────
-        // 상세 데이터 로드
-        // ──────────────────────────────────────────────────
-        function loadDetail() {
-            const record = allRecords.find(x => x.date === selDate && x.person === selPerson);
+        for (let day = 1; day <= lastDay; day++) {
+            const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const hasRecord = allRecords.some(r => r.date === dateStr);
+            const dow = new Date(y, m, day).getDay();
 
-            // 무단결근 여부 복원
-            const isAbsence = record?.absenceType === 'unauthorized';
-            document.getElementById('chkAbsence').checked = isAbsence;
-            document.getElementById('timeBox').classList.toggle('disabled', isAbsence);
+            const cell = document.createElement('div');
+            cell.className = 'calendar-day';
+            if (hasRecord) cell.classList.add('has-record');
+            if (dow === 0) cell.classList.add('sun');
+            if (dow === 6) cell.classList.add('sat');
+            if (dateStr === todayStr) cell.classList.add('today');
+            if (selDate === dateStr) cell.classList.add('selected');
+            cell.textContent = day;
+            cell.setAttribute('role', 'gridcell');
+            cell.setAttribute('aria-label', `${m + 1}월 ${day}일${hasRecord ? ' (기록 있음)' : ''}`);
+            cell.setAttribute('tabindex', '0');
 
-            document.getElementById('st').value = record?.startTime || '';
-            document.getElementById('et').value = record?.endTime || '';
-            document.getElementById('memo').value = record?.notes || '';
+            cell.addEventListener('click', () => selectDate(dateStr));
+            cell.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') selectDate(dateStr); });
 
-            // 외출 행 복원 (구 형식/신 형식 모두 처리)
-            document.getElementById('outingsContainer').innerHTML = '';
-            const outings = record ? getRecordOutings(record) : [];
-            if (outings.length > 0) {
-                outings.forEach(o => addOutingRow(o.out, o.ret));
-            } else {
-                addOutingRow(); // 빈 행 1개
-            }
+            grid.appendChild(cell);
+        }
+    }
 
-            document.getElementById('timeError').textContent = '';
+    function selectDate(dateStr) {
+        selDate = dateStr;
+        document.getElementById('viewDate').textContent = dateStr;
+        refresh();
+        loadDetail();
+    }
+
+    // ──────────────────────────────────────────────────
+    // 저장
+    // ──────────────────────────────────────────────────
+    function doSave() {
+        if (!selDate || !selPerson) {
+            showToast('날짜와 직원을 선택하세요!');
+            return;
+        }
+
+        const isAbsence = document.getElementById('chkAbsence').checked;
+        const errEl = document.getElementById('timeError');
+        errEl.textContent = '';
+
+        let missMinutes = 0;
+        let saveData = {
+            date: selDate,
+            person: selPerson,
+            notes: document.getElementById('memo').value
+        };
+
+        if (isAbsence) {
+            missMinutes = 480;
+            saveData = { ...saveData, absenceType: 'unauthorized', startTime: '', endTime: '', outings: [], lateMinutes: 480 };
+        } else {
+            const s = document.getElementById('st').value;
+            const e = document.getElementById('et').value;
+
             ['st', 'et'].forEach(id => document.getElementById(id).classList.remove('input-error'));
+            document.querySelectorAll('.outing-out, .outing-ret').forEach(el => el.classList.remove('input-error'));
+
+            if (s && e && timeToMinutes(s) >= timeToMinutes(e)) {
+                document.getElementById('st').classList.add('input-error');
+                document.getElementById('et').classList.add('input-error');
+                errEl.textContent = '퇴근 시간이 출근 시간보다 빠를 수 없습니다.';
+                return;
+            }
+
+            const rows = document.querySelectorAll('#outingsContainer .outing-row');
+            for (let i = 0; i < rows.length; i++) {
+                const oEl = rows[i].querySelector('.outing-out');
+                const rEl = rows[i].querySelector('.outing-ret');
+                const o = oEl.value, r = rEl.value;
+                if (o && !r) { rEl.classList.add('input-error'); errEl.textContent = `외출 ${i+1}: 복귀 시간을 입력해주세요.`; return; }
+                if (!o && r) { oEl.classList.add('input-error'); errEl.textContent = `외출 ${i+1}: 외출 시간을 입력해주세요.`; return; }
+                if (o && r && timeToMinutes(o) >= timeToMinutes(r)) {
+                    oEl.classList.add('input-error'); rEl.classList.add('input-error');
+                    errEl.textContent = `외출 ${i+1}: 복귀 시간이 외출 시간보다 빠를 수 없습니다.`; return;
+                }
+            }
+
+            if (s && timeToMinutes(s) > 510) missMinutes += (timeToMinutes(s) - 510);
+            if (e && timeToMinutes(e) < 1050) missMinutes += (1050 - timeToMinutes(e));
+
+            const outings = getOutingsFromDOM();
+            outings.forEach(({ out, ret }) => {
+                if (out && ret) {
+                    const oMin = timeToMinutes(out), rMin = timeToMinutes(ret);
+                    const lunchOverlap = Math.max(0, Math.min(rMin, 810) - Math.max(oMin, 750));
+                    missMinutes += (rMin - oMin) - lunchOverlap;
+                }
+            });
+
+            saveData = { ...saveData, absenceType: '', startTime: s, endTime: e, outings: outings.length ? outings : [], lateMinutes: missMinutes };
         }
-    </script>
+
+        db.ref(`attendance/${selPerson}/${selDate}`).set(saveData).then(() => {
+            showToast('저장되었습니다.');
+            resetForm();
+        }).catch(() => {
+            showToast('저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+        });
+    }
+
+    function resetForm() {
+        document.getElementById('chkAbsence').checked = false;
+        document.getElementById('timeBox').classList.remove('disabled');
+        ['st', 'et'].forEach(id => {
+            const el = document.getElementById(id);
+            el.value = '';
+            el.classList.remove('input-error');
+        });
+        document.getElementById('outingsContainer').innerHTML = '';
+        addOutingRow();
+        document.getElementById('memo').value = '';
+        document.getElementById('timeError').textContent = '';
+        selDate = null;
+        selPerson = '';
+        document.getElementById('viewDate').textContent = '날짜 선택';
+        updatePersonUI();
+        refresh();
+    }
+
+    // ──────────────────────────────────────────────────
+    // 통계 렌더링 (CSS 바 차트)
+    // ──────────────────────────────────────────────────
+    function renderStats() {
+        const totals = users.map(u =>
+            allRecords.filter(r => r.person === u).reduce((acc, cur) => acc + (cur.lateMinutes || 0), 0)
+        );
+
+        // summaryBox: JS 호환성 유지 (숨김 상태로 채움)
+        const summaryBox = document.getElementById('summaryBox');
+        summaryBox.innerHTML = '';
+        users.forEach((u, i) => {
+            const d = calcDisplay(totals[i]);
+            const card = document.createElement('div');
+            card.className = 'summary-card' + (filterName === u ? ' active' : '');
+            card.setAttribute('aria-pressed', String(filterName === u));
+            card.setAttribute('aria-label', `${u} ${d.totalMin}분`);
+            card.addEventListener('click', () => setFilter(u));
+            summaryBox.appendChild(card);
+        });
+
+        // CSS 바 차트
+        const maxVal = Math.max(...totals, 1);
+        const chart = document.getElementById('cssBarChart');
+        chart.innerHTML = '';
+
+        users.forEach((u, i) => {
+            const d = calcDisplay(totals[i]);
+            const pct = (totals[i] / maxVal) * 100;
+            const isActive = filterName === u;
+            const ratio = totals[i] / maxVal;
+
+            const fillStyle = ratio > 0.65
+                ? 'background:linear-gradient(90deg,#ff3b30,#ff6b6b);box-shadow:0 0 8px rgba(255,59,48,0.35);'
+                : ratio > 0.25
+                ? 'background:linear-gradient(90deg,#ffc800,#ffdd57);box-shadow:0 0 6px rgba(255,200,0,0.25);'
+                : 'background:linear-gradient(90deg,#00ff88,#00c8ff);box-shadow:0 0 6px rgba(0,255,136,0.25);';
+
+            const item = document.createElement('div');
+            item.className = 'css-bar-item' + (isActive ? ' bar-active' : '');
+            item.innerHTML = `
+                <div class="css-bar-top">
+                    <span class="css-bar-name" onclick="setFilter('${escHtml(u)}')">${escHtml(u)}</span>
+                    <span class="css-bar-val">${d.chartLabel}</span>
+                </div>
+                <div class="css-bar-track">
+                    <div class="css-bar-fill" style="width:${pct < 1 && totals[i] === 0 ? 0 : Math.max(pct, totals[i] > 0 ? 4 : 0).toFixed(1)}%;${fillStyle}"></div>
+                </div>
+            `;
+            chart.appendChild(item);
+        });
+    }
+
+    function setFilter(name) {
+        filterName = (filterName === name) ? '' : name;
+        document.getElementById('curFilter').textContent = filterName ? `(${filterName} 필터)` : '';
+        renderStats();
+        renderTable();
+    }
+
+    // ──────────────────────────────────────────────────
+    // 기록 목록 렌더링
+    // ──────────────────────────────────────────────────
+    function renderTable() {
+        const target = filterName
+            ? allRecords.filter(r => r.person === filterName)
+            : allRecords;
+
+        const sorted = target.slice().sort((a, b) => b.date.localeCompare(a.date));
+        const tbody = document.getElementById('listBody');
+        tbody.innerHTML = '';
+
+        sorted.forEach(r => {
+            const tr = document.createElement('tr');
+            tr.dataset.date = r.date;
+            tr.dataset.person = r.person;
+
+            const totalMin = r.lateMinutes || 0;
+            const d = calcDisplay(totalMin);
+            const isAbsence = r.absenceType === 'unauthorized';
+            const outingsText = isAbsence
+                ? '<span class="badge-absence">무단결근</span>'
+                : (getRecordOutings(r)
+                    .filter(o => o.out)
+                    .map(o => `${escHtml(o.out)}~${escHtml(o.ret || '?')}`)
+                    .join('<br>') || '-');
+            const lateCell = totalMin > 0
+                ? `<td class="late-detail">
+                       <span class="d-min">${totalMin}분</span>${isAbsence ? ' <span class="badge-absence">무단결근</span>' : ''}<br>
+                       <span class="d-hour">${d.hourStr}</span><br>
+                       <span class="d-day">연차 ${d.day}일</span>
+                   </td>`
+                : `<td>-</td>`;
+            tr.innerHTML = `
+                <td>${escHtml(r.date)}</td>
+                <td style="font-weight:600;color:#ccc;">${escHtml(r.person)}</td>
+                <td>${escHtml(r.startTime) || '-'}</td>
+                <td>${escHtml(r.endTime) || '-'}</td>
+                <td>${outingsText}</td>
+                ${lateCell}
+                <td class="td-notes" data-date="${escHtml(r.date)}" data-person="${escHtml(r.person)}" title="클릭하여 비고 수정">${escHtml(r.notes) || '<span style="color:#2a2a2a">메모</span>'}</td>
+                <td><button class="btn-del" data-date="${escHtml(r.date)}" data-person="${escHtml(r.person)}" aria-label="${escHtml(r.date)} ${escHtml(r.person)} 기록 삭제">삭제</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function handleTableClick(e) {
+        const delBtn = e.target.closest('.btn-del');
+        if (delBtn) {
+            e.stopPropagation();
+            const { date, person } = delBtn.dataset;
+            if (confirm(`[${person}] ${date} 기록을 삭제하시겠습니까?`)) {
+                db.ref(`attendance/${person}/${date}`).remove()
+                    .then(() => showToast('삭제되었습니다.'))
+                    .catch(() => showToast('삭제 중 오류가 발생했습니다.'));
+            }
+            return;
+        }
+
+        const notesTd = e.target.closest('.td-notes');
+        if (notesTd && !notesTd.querySelector('input')) {
+            e.stopPropagation();
+            const { date, person } = notesTd.dataset;
+            const record = allRecords.find(x => x.date === date && x.person === person);
+            const currentVal = record?.notes || '';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentVal;
+            notesTd.innerHTML = '';
+            notesTd.appendChild(input);
+            input.focus();
+
+            function saveNotes() {
+                const newVal = input.value.trim();
+                if (newVal === currentVal) { renderTable(); return; }
+                db.ref(`attendance/${person}/${date}`).update({ notes: newVal })
+                    .then(() => showToast('비고 저장됨'))
+                    .catch(() => showToast('저장 오류'));
+            }
+            input.addEventListener('blur', saveNotes);
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') { input.blur(); }
+                if (e.key === 'Escape') { renderTable(); }
+            });
+            return;
+        }
+
+        const row = e.target.closest('tr');
+        if (row && row.dataset.date) {
+            selDate = row.dataset.date;
+            selPerson = row.dataset.person;
+            document.getElementById('viewDate').textContent = selDate;
+            updatePersonUI();
+            loadDetail();
+            refresh();
+        }
+    }
+
+    // ──────────────────────────────────────────────────
+    // 상세 데이터 로드
+    // ──────────────────────────────────────────────────
+    function loadDetail() {
+        const record = allRecords.find(x => x.date === selDate && x.person === selPerson);
+
+        const isAbsence = record?.absenceType === 'unauthorized';
+        document.getElementById('chkAbsence').checked = isAbsence;
+        document.getElementById('timeBox').classList.toggle('disabled', isAbsence);
+
+        document.getElementById('st').value = record?.startTime || '';
+        document.getElementById('et').value = record?.endTime || '';
+        document.getElementById('memo').value = record?.notes || '';
+
+        document.getElementById('outingsContainer').innerHTML = '';
+        const outings = record ? getRecordOutings(record) : [];
+        if (outings.length > 0) {
+            outings.forEach(o => addOutingRow(o.out, o.ret));
+        } else {
+            addOutingRow();
+        }
+
+        document.getElementById('timeError').textContent = '';
+        ['st', 'et'].forEach(id => document.getElementById(id).classList.remove('input-error'));
+    }
+</script>
 </body>
 </html>
