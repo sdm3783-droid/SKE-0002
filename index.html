@@ -13,39 +13,19 @@
         /* ── 기본 ── */
         body {
             font-family: -apple-system, 'Pretendard', 'Noto Sans KR', 'Segoe UI', sans-serif;
-            background: #080c10;
-            color: #e2e8f0;
+            background: #f4f6f9;
+            color: #1e293b;
             min-height: 100vh;
             display: flex;
             overflow-x: hidden;
-        }
-
-        /* ── 배경 글로우 ── */
-        body::before, body::after {
-            content: '';
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(100px);
-            pointer-events: none;
-            z-index: 0;
-        }
-        body::before {
-            width: 500px; height: 500px;
-            background: rgba(0,255,136,0.04);
-            top: -150px; right: 100px;
-        }
-        body::after {
-            width: 400px; height: 400px;
-            background: rgba(0,200,255,0.04);
-            bottom: -100px; left: 100px;
         }
 
         /* ── 사이드바 ── */
         .sidebar {
             width: 64px;
             min-height: 100vh;
-            background: rgba(255,255,255,0.025);
-            border-right: 1px solid rgba(255,255,255,0.07);
+            background: #ffffff;
+            border-right: 1px solid #e8ecf0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -54,16 +34,16 @@
             position: fixed;
             top: 0; left: 0; bottom: 0;
             z-index: 100;
-            backdrop-filter: blur(20px);
+            box-shadow: 2px 0 8px rgba(0,0,0,0.04);
         }
         .sidebar-logo {
             width: 36px; height: 36px;
-            background: linear-gradient(135deg, #00ff88, #00c8ff);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
             font-size: 18px;
             margin-bottom: 14px;
-            box-shadow: 0 0 24px rgba(0,255,136,0.45);
+            box-shadow: 0 4px 12px rgba(99,102,241,0.3);
             flex-shrink: 0;
         }
         .sidebar-icon {
@@ -73,19 +53,18 @@
             font-size: 17px;
             cursor: pointer;
             transition: all 0.2s;
-            color: #444;
+            color: #94a3b8;
             border: 1px solid transparent;
             flex-shrink: 0;
         }
         .sidebar-icon.active {
-            background: rgba(0,255,136,0.12);
-            border-color: rgba(0,255,136,0.35);
-            color: #00ff88;
-            box-shadow: 0 0 16px rgba(0,255,136,0.2);
+            background: #ede9fe;
+            border-color: #c4b5fd;
+            color: #6366f1;
         }
         .sidebar-icon:hover:not(.active) {
-            background: rgba(255,255,255,0.06);
-            color: #888;
+            background: #f1f5f9;
+            color: #64748b;
         }
         .sidebar-bottom { margin-top: auto; }
 
@@ -103,39 +82,38 @@
         /* ── 탑바 ── */
         .topbar {
             height: 54px;
-            background: rgba(255,255,255,0.02);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            background: #ffffff;
+            border-bottom: 1px solid #e8ecf0;
             display: flex;
             align-items: center;
             padding: 0 20px;
             gap: 10px;
             position: sticky; top: 0;
-            backdrop-filter: blur(20px);
             z-index: 50;
             flex-shrink: 0;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
         .topbar-title {
             font-size: 15px;
             font-weight: 700;
-            color: #e2e8f0;
+            color: #1e293b;
             letter-spacing: -0.3px;
         }
         .live-badge {
             display: flex; align-items: center; gap: 5px;
-            background: rgba(0,255,136,0.1);
-            border: 1px solid rgba(0,255,136,0.3);
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
             border-radius: 20px;
             padding: 3px 9px;
             font-size: 10px;
-            color: #00ff88;
+            color: #16a34a;
             font-weight: 700;
             letter-spacing: 0.5px;
         }
         .live-dot {
             width: 5px; height: 5px;
             border-radius: 50%;
-            background: #00ff88;
-            box-shadow: 0 0 6px #00ff88;
+            background: #22c55e;
             animation: livePulse 1.5s infinite;
         }
         @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
@@ -145,22 +123,22 @@
         }
         #monthLabel {
             font-size: 13px;
-            color: #ccc;
+            color: #475569;
             font-weight: 600;
             min-width: 100px;
             text-align: center;
         }
         .nav-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             border-radius: 7px;
             padding: 5px 11px;
             font-size: 12px;
-            color: #777;
+            color: #64748b;
             cursor: pointer;
             transition: all 0.15s;
         }
-        .nav-btn:hover { background: rgba(255,255,255,0.09); color: #bbb; }
+        .nav-btn:hover { background: #f1f5f9; color: #334155; }
 
         /* ── 콘텐츠 ── */
         .content {
@@ -178,40 +156,40 @@
             gap: 10px;
         }
         .status-card {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.07);
+            background: #ffffff;
+            border: 1px solid #e8ecf0;
             border-radius: 12px;
             padding: 12px 14px;
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
         .status-card::before {
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0;
-            height: 2px;
-            background: rgba(255,255,255,0.06);
-            transition: background 0.3s;
+            height: 3px;
+            background: #e2e8f0;
         }
-        .status-card.ok::before   { background: linear-gradient(90deg,#00ff88,transparent); }
-        .status-card.late::before { background: linear-gradient(90deg,#ff3b30,transparent); }
-        .status-card.out::before  { background: linear-gradient(90deg,#ffc800,transparent); }
-        .status-card:hover { border-color: rgba(255,255,255,0.14); transform: translateY(-1px); }
+        .status-card.ok::before   { background: linear-gradient(90deg,#22c55e,#4ade80); }
+        .status-card.late::before { background: linear-gradient(90deg,#ef4444,#f87171); }
+        .status-card.out::before  { background: linear-gradient(90deg,#f59e0b,#fbbf24); }
+        .status-card:hover { border-color: #c7d2fe; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .status-card.selected-card {
-            border-color: rgba(0,255,136,0.4);
-            background: rgba(0,255,136,0.06);
+            border-color: #a5b4fc;
+            background: #f5f3ff;
         }
-        .sc-name   { font-size: 14px; font-weight: 700; color: #e2e8f0; margin-bottom: 3px; }
-        .sc-status { font-size: 11px; font-weight: 600; color: #444; }
-        .sc-time   { font-size: 10px; color: #3a3a3a; margin-top: 3px; }
-        .status-card.ok .sc-status   { color: #00ff88; }
-        .status-card.late .sc-status { color: #ff3b30; }
-        .status-card.out .sc-status  { color: #ffc800; }
-        .status-card.ok .sc-time     { color: rgba(0,255,136,0.5); }
-        .status-card.late .sc-time   { color: rgba(255,59,48,0.5); }
-        .status-card.out .sc-time    { color: rgba(255,200,0,0.5); }
+        .sc-name   { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 3px; }
+        .sc-status { font-size: 11px; font-weight: 600; color: #94a3b8; }
+        .sc-time   { font-size: 10px; color: #cbd5e1; margin-top: 3px; }
+        .status-card.ok .sc-status   { color: #16a34a; }
+        .status-card.late .sc-status { color: #dc2626; }
+        .status-card.out .sc-status  { color: #d97706; }
+        .status-card.ok .sc-time     { color: #86efac; }
+        .status-card.late .sc-time   { color: #fca5a5; }
+        .status-card.out .sc-time    { color: #fcd34d; }
 
         /* ── 하단 2컬럼 ── */
         .bottom-grid {
@@ -223,20 +201,20 @@
         .left-col  { display: flex; flex-direction: column; gap: 14px; }
         .right-col { display: flex; flex-direction: column; gap: 14px; }
 
-        /* ── 공통 글래스 카드 ── */
+        /* ── 공통 카드 ── */
         .glass-card {
-            background: rgba(255,255,255,0.028);
-            border: 1px solid rgba(255,255,255,0.07);
+            background: #ffffff;
+            border: 1px solid #e8ecf0;
             border-radius: 14px;
-            backdrop-filter: blur(8px);
             overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
         .card-header {
             padding: 11px 16px 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.055);
+            border-bottom: 1px solid #f1f5f9;
             font-size: 10px;
             font-weight: 600;
-            color: #555;
+            color: #94a3b8;
             letter-spacing: 1px;
             text-transform: uppercase;
             display: flex; align-items: center; gap: 7px;
@@ -254,7 +232,7 @@
             text-align: center;
             font-size: 9px;
             font-weight: 600;
-            color: #3a3a3a;
+            color: #94a3b8;
             padding: 3px 0 5px;
             letter-spacing: 0.5px;
         }
@@ -264,37 +242,36 @@
             font-size: 11px;
             border-radius: 7px;
             cursor: pointer;
-            color: #3a3a3a;
+            color: #475569;
             position: relative;
             transition: all 0.15s;
             border: 1px solid transparent;
             font-weight: 500;
         }
-        .calendar-day:hover { background: rgba(255,255,255,0.06); color: #bbb; }
-        .calendar-day.sun { color: rgba(255,59,48,0.45); }
-        .calendar-day.sat { color: rgba(0,122,255,0.45); }
-        .calendar-day.has-record { color: #666; }
+        .calendar-day:hover { background: #f1f5f9; color: #1e293b; }
+        .calendar-day.sun { color: #ef4444; }
+        .calendar-day.sat { color: #3b82f6; }
+        .calendar-day.has-record { color: #1e293b; font-weight: 600; }
         .calendar-day.has-record::after {
             content: '';
             position: absolute;
             bottom: 2px;
             width: 3px; height: 3px;
             border-radius: 50%;
-            background: #00ff88;
-            box-shadow: 0 0 4px #00ff88;
+            background: #6366f1;
         }
         .calendar-day.today {
-            background: rgba(0,255,136,0.1);
-            border-color: rgba(0,255,136,0.35);
-            color: #00ff88 !important;
+            background: #ede9fe;
+            border-color: #c4b5fd;
+            color: #6366f1 !important;
             font-weight: 700;
         }
         .calendar-day.selected {
-            background: rgba(0,200,255,0.12) !important;
-            border-color: rgba(0,200,255,0.4) !important;
-            color: #00c8ff !important;
+            background: #6366f1 !important;
+            border-color: #6366f1 !important;
+            color: #ffffff !important;
             font-weight: 700;
-            box-shadow: 0 0 10px rgba(0,200,255,0.15);
+            box-shadow: 0 2px 8px rgba(99,102,241,0.3);
         }
 
         /* ── 기록 테이블 ── */
@@ -303,32 +280,33 @@
         th {
             font-size: 9px;
             font-weight: 600;
-            color: #3a3a3a;
+            color: #94a3b8;
             letter-spacing: 1px;
             text-transform: uppercase;
             text-align: left;
             padding: 6px 10px 8px;
-            border-bottom: 1px solid rgba(255,255,255,0.055);
+            border-bottom: 1px solid #f1f5f9;
             white-space: nowrap;
+            background: #fafafa;
         }
         td {
             padding: 9px 10px;
             font-size: 11px;
-            color: #666;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: #64748b;
+            border-bottom: 1px solid #f8fafc;
             vertical-align: middle;
         }
         tbody tr { cursor: pointer; transition: background 0.1s; }
-        tbody tr:hover td { background: rgba(255,255,255,0.025); color: #aaa; }
-        .late-text { color: #ff3b30; font-weight: 600; }
+        tbody tr:hover td { background: #f8fafc; }
+        .late-text { color: #ef4444; font-weight: 600; }
         .late-detail { line-height: 1.6; }
-        .late-detail .d-min  { color: #ff3b30; font-weight: 600; }
-        .late-detail .d-hour { color: #444; font-size: 10px; }
-        .late-detail .d-day  { color: #ffc800; font-size: 10px; font-weight: 600; }
+        .late-detail .d-min  { color: #ef4444; font-weight: 600; }
+        .late-detail .d-hour { color: #94a3b8; font-size: 10px; }
+        .late-detail .d-day  { color: #f59e0b; font-size: 10px; font-weight: 600; }
         .btn-del {
-            background: rgba(255,59,48,0.12);
-            color: #ff3b30;
-            border: 1px solid rgba(255,59,48,0.22);
+            background: #fef2f2;
+            color: #ef4444;
+            border: 1px solid #fecaca;
             border-radius: 5px;
             padding: 3px 8px;
             cursor: pointer;
@@ -336,25 +314,25 @@
             font-weight: 600;
             transition: all 0.15s;
         }
-        .btn-del:hover { background: rgba(255,59,48,0.28); }
+        .btn-del:hover { background: #fee2e2; }
         .td-notes { cursor: text; min-width: 70px; }
-        .td-notes:hover { color: #ccc; }
+        .td-notes:hover { color: #334155; }
         .td-notes input {
             width: 100%;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(0,200,255,0.4);
+            background: #ffffff;
+            border: 1px solid #6366f1;
             border-radius: 4px;
             padding: 3px 6px;
             font-size: 11px;
-            color: #e2e8f0;
+            color: #1e293b;
             outline: none;
             font-family: inherit;
         }
         .badge-absence {
             display: inline-block;
-            background: rgba(255,59,48,0.15);
-            border: 1px solid rgba(255,59,48,0.3);
-            color: #ff3b30;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #ef4444;
             font-size: 9px;
             font-weight: 700;
             padding: 1px 6px;
@@ -368,7 +346,7 @@
             display: block;
             font-size: 10px;
             font-weight: 600;
-            color: #555;
+            color: #94a3b8;
             letter-spacing: 0.8px;
             text-transform: uppercase;
             margin-bottom: 6px;
@@ -388,65 +366,65 @@
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.04);
-            color: #555;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #64748b;
             transition: all 0.2s;
             font-family: inherit;
         }
-        .person-btn:hover { background: rgba(255,255,255,0.08); color: #aaa; }
+        .person-btn:hover { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
         .person-btn.active {
-            background: rgba(0,255,136,0.12);
-            border-color: rgba(0,255,136,0.4);
-            color: #00ff88;
+            background: #ede9fe;
+            border-color: #a5b4fc;
+            color: #6366f1;
         }
 
         /* 선택된 날짜 */
         .selected-date-label {
             font-size: 11px;
-            color: #444;
+            color: #94a3b8;
             margin-bottom: 10px;
         }
-        #viewDate { color: #00c8ff; font-weight: 600; }
+        #viewDate { color: #6366f1; font-weight: 600; }
 
         /* 무단결근 */
         .absence-check-wrap {
             display: flex; align-items: center; gap: 8px;
             padding: 9px 12px;
-            background: rgba(255,59,48,0.06);
-            border: 1px solid rgba(255,59,48,0.18);
+            background: #fef2f2;
+            border: 1px solid #fecaca;
             border-radius: 9px;
             margin-bottom: 10px;
         }
         .absence-check-wrap input[type=checkbox] {
             width: 15px; height: 15px;
-            accent-color: #ff3b30;
+            accent-color: #ef4444;
             cursor: pointer;
             flex-shrink: 0;
         }
         .absence-check-wrap label {
             font-size: 11px;
             font-weight: 600;
-            color: #ff3b30;
+            color: #ef4444;
             cursor: pointer;
             user-select: none;
         }
 
         /* 시간 박스 */
         .time-box {
-            border: 1px solid rgba(0,255,136,0.2);
+            border: 1px solid #e0e7ff;
             border-radius: 10px;
             padding: 10px;
-            background: rgba(0,255,136,0.025);
+            background: #f5f3ff;
             margin-bottom: 10px;
         }
-        .time-box.disabled { opacity: 0.35; pointer-events: none; }
+        .time-box.disabled { opacity: 0.4; pointer-events: none; }
         .time-row { display: flex; gap: 6px; margin-bottom: 6px; }
         .time-input-group { flex: 1; }
         .time-input-group label {
             display: block;
             font-size: 10px;
-            color: #555;
+            color: #94a3b8;
             margin-bottom: 3px;
             font-weight: 600;
             letter-spacing: 0.5px;
@@ -454,27 +432,25 @@
         .time-input-group input[type="time"] {
             width: 100%;
             padding: 7px 8px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 7px;
             font-size: 12px;
-            color: #e2e8f0;
+            color: #1e293b;
             outline: none;
             transition: all 0.2s;
             font-family: inherit;
             text-align: center;
-            color-scheme: dark;
         }
         .time-input-group input[type="time"]:focus {
-            border-color: rgba(0,255,136,0.4);
-            background: rgba(0,255,136,0.04);
-            box-shadow: 0 0 0 3px rgba(0,255,136,0.08);
+            border-color: #a5b4fc;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
         }
         .input-error {
-            border-color: rgba(255,59,48,0.6) !important;
-            background: rgba(255,59,48,0.05) !important;
+            border-color: #fca5a5 !important;
+            background: #fef2f2 !important;
         }
-        .error-msg { color: #ff3b30; font-size: 10px; margin-top: 4px; }
+        .error-msg { color: #ef4444; font-size: 10px; margin-top: 4px; }
 
         /* 외출 행 */
         .outing-row {
@@ -482,9 +458,9 @@
         }
         .outing-row .time-input-group { flex: 1; }
         .btn-remove-outing {
-            background: rgba(255,59,48,0.1);
-            color: #ff3b30;
-            border: 1px solid rgba(255,59,48,0.22);
+            background: #fef2f2;
+            color: #ef4444;
+            border: 1px solid #fecaca;
             border-radius: 7px;
             padding: 7px 8px;
             cursor: pointer;
@@ -493,60 +469,61 @@
             transition: all 0.15s;
             font-family: inherit;
         }
-        .btn-remove-outing:hover { background: rgba(255,59,48,0.22); }
+        .btn-remove-outing:hover { background: #fee2e2; }
         .btn-add-outing {
             width: 100%;
             padding: 7px;
-            background: rgba(255,255,255,0.03);
-            border: 1px dashed rgba(0,255,136,0.22);
+            background: #ffffff;
+            border: 1px dashed #c7d2fe;
             border-radius: 7px;
-            color: rgba(0,255,136,0.7);
+            color: #818cf8;
             font-size: 11px;
             cursor: pointer;
             margin-top: 2px;
             font-family: inherit;
             transition: all 0.15s;
         }
-        .btn-add-outing:hover { background: rgba(0,255,136,0.05); border-color: rgba(0,255,136,0.4); color: #00ff88; }
+        .btn-add-outing:hover { background: #ede9fe; border-color: #a5b4fc; color: #6366f1; }
 
         /* 비고 */
         textarea {
             width: 100%;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 7px 10px;
             font-size: 12px;
-            color: #e2e8f0;
+            color: #1e293b;
             resize: vertical;
             outline: none;
             font-family: inherit;
             transition: all 0.2s;
         }
         textarea:focus {
-            border-color: rgba(0,255,136,0.35);
-            background: rgba(0,255,136,0.03);
+            border-color: #a5b4fc;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
         }
 
         /* 저장 버튼 */
         .btn-save {
             width: 100%;
             padding: 10px;
-            background: linear-gradient(135deg,rgba(0,255,136,0.15),rgba(0,200,255,0.15));
-            border: 1px solid rgba(0,255,136,0.35);
+            background: #6366f1;
+            border: none;
             border-radius: 10px;
-            color: #00ff88;
+            color: #ffffff;
             font-size: 13px;
             font-weight: 700;
             cursor: pointer;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
             transition: all 0.2s;
             font-family: inherit;
             margin-top: 10px;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.3);
         }
         .btn-save:hover {
-            background: linear-gradient(135deg,rgba(0,255,136,0.25),rgba(0,200,255,0.25));
-            box-shadow: 0 0 20px rgba(0,255,136,0.18);
+            background: #4f46e5;
+            box-shadow: 0 4px 16px rgba(99,102,241,0.4);
         }
 
         /* ── 통계 ── */
@@ -555,23 +532,24 @@
         }
         .unit-btn {
             padding: 4px 10px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid #e2e8f0;
             border-radius: 20px;
-            background: rgba(255,255,255,0.03);
-            color: #444;
+            background: #f8fafc;
+            color: #94a3b8;
             font-size: 11px;
             cursor: pointer;
             transition: all 0.15s;
             font-family: inherit;
         }
         .unit-btn.active {
-            background: rgba(0,255,136,0.12);
-            border-color: rgba(0,255,136,0.35);
-            color: #00ff88;
+            background: #ede9fe;
+            border-color: #a5b4fc;
+            color: #6366f1;
+            font-weight: 600;
         }
         #curFilter {
             font-size: 10px;
-            color: #ff3b30;
+            color: #ef4444;
             font-weight: 600;
             margin-left: 4px;
         }
@@ -586,14 +564,14 @@
             margin-bottom: 4px;
         }
         .css-bar-name {
-            font-size: 12px; color: #999; font-weight: 500; cursor: pointer;
+            font-size: 12px; color: #64748b; font-weight: 500; cursor: pointer;
             transition: color 0.15s;
         }
-        .css-bar-name:hover { color: #00ff88; }
-        .css-bar-val  { font-size: 11px; color: #444; }
+        .css-bar-name:hover { color: #6366f1; }
+        .css-bar-val  { font-size: 11px; color: #94a3b8; }
         .css-bar-track {
-            height: 4px;
-            background: rgba(255,255,255,0.05);
+            height: 5px;
+            background: #f1f5f9;
             border-radius: 4px;
             overflow: hidden;
         }
@@ -602,17 +580,16 @@
             border-radius: 4px;
             transition: width 0.5s cubic-bezier(.4,0,.2,1);
         }
-        .bar-active .css-bar-name { color: #00ff88 !important; }
-        .bar-active .css-bar-val  { color: #00ff88 !important; }
+        .bar-active .css-bar-name { color: #6366f1 !important; font-weight: 600; }
+        .bar-active .css-bar-val  { color: #6366f1 !important; }
 
         /* ── 토스트 ── */
         .toast {
             position: fixed;
             bottom: 24px; left: 50%;
             transform: translateX(-50%) translateY(50px);
-            background: rgba(20,28,38,0.96);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #e2e8f0;
+            background: #1e293b;
+            color: #f8fafc;
             padding: 10px 20px;
             border-radius: 10px;
             font-size: 13px;
@@ -620,8 +597,7 @@
             transition: all 0.3s ease;
             z-index: 9999;
             pointer-events: none;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
         .toast.show {
             opacity: 1;
@@ -640,6 +616,8 @@
             .status-cards { grid-template-columns: repeat(2,1fr); }
             .content { padding: 12px; }
         }
+        /* ── content 배경 ── */
+        .content { background: #f4f6f9; }
     </style>
 </head>
 <body>
@@ -1225,10 +1203,10 @@
             const ratio = totals[i] / maxVal;
 
             const fillStyle = ratio > 0.65
-                ? 'background:linear-gradient(90deg,#ff3b30,#ff6b6b);box-shadow:0 0 8px rgba(255,59,48,0.35);'
+                ? 'background:linear-gradient(90deg,#ef4444,#f87171);'
                 : ratio > 0.25
-                ? 'background:linear-gradient(90deg,#ffc800,#ffdd57);box-shadow:0 0 6px rgba(255,200,0,0.25);'
-                : 'background:linear-gradient(90deg,#00ff88,#00c8ff);box-shadow:0 0 6px rgba(0,255,136,0.25);';
+                ? 'background:linear-gradient(90deg,#f59e0b,#fbbf24);'
+                : 'background:linear-gradient(90deg,#6366f1,#818cf8);';
 
             const item = document.createElement('div');
             item.className = 'css-bar-item' + (isActive ? ' bar-active' : '');
@@ -1287,7 +1265,7 @@
                 : `<td>-</td>`;
             tr.innerHTML = `
                 <td>${escHtml(r.date)}</td>
-                <td style="font-weight:600;color:#ccc;">${escHtml(r.person)}</td>
+                <td style="font-weight:600;color:#334155;">${escHtml(r.person)}</td>
                 <td>${escHtml(r.startTime) || '-'}</td>
                 <td>${escHtml(r.endTime) || '-'}</td>
                 <td>${outingsText}</td>
