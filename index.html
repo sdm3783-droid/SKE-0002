@@ -1692,7 +1692,7 @@
                 const oEl = rows[i].querySelector('.outing-out');
                 const rEl = rows[i].querySelector('.outing-ret');
                 const o = oEl.value, r = rEl.value;
-                if (o && !r) { rEl.classList.add('input-error'); errEl.textContent = `외출 ${i+1}: 복귀 시간을 입력해주세요.`; return; }
+                // 외출만 입력 허용 — 복귀 시간은 나중에 추가 가능
                 if (!o && r) { oEl.classList.add('input-error'); errEl.textContent = `외출 ${i+1}: 외출 시간을 입력해주세요.`; return; }
                 if (o && r && timeToMinutes(o) >= timeToMinutes(r)) {
                     oEl.classList.add('input-error'); rEl.classList.add('input-error');
