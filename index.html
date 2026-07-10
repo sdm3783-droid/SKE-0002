@@ -906,8 +906,7 @@
         <button class="tab-btn active" data-target="dashboard" onclick="navTo('dashboard', this)">📊 대시보드</button>
         <button class="tab-btn" data-target="section-calendar" onclick="navTo('section-calendar', this)">📅 달력</button>
         <button class="tab-btn" data-target="section-stats" onclick="navTo('section-stats', this)">📈 통계</button>
-        <button class="tab-btn" data-target="section-records" onclick="navTo('section-records', this)">📋 기록</button>
-        <button class="tab-btn" data-target="section-form" onclick="navTo('section-form', this)">✏️ 입력</button>
+        <button class="tab-btn" data-target="section-form" onclick="navTo('section-form', this)">✏️ 입력/기록</button>
     </div>
 
     <!-- 콘텐츠 -->
@@ -944,36 +943,7 @@
             </div>
         </div>
 
-        <!-- 기록 패널 -->
-        <div class="panel" id="panel-records">
-            <div class="glass-card" id="section-records" role="region" aria-label="기록 목록">
-                <div class="card-header">
-                    📋 기록 목록
-                    <span id="curFilter" aria-live="polite"></span>
-                </div>
-                <div class="card-body" style="padding:0 0 8px;">
-                    <div class="table-scroll">
-                        <table role="table" aria-label="근태 기록">
-                            <thead>
-                                <tr>
-                                    <th scope="col">날짜</th>
-                                    <th scope="col">직원</th>
-                                    <th scope="col">출근</th>
-                                    <th scope="col">퇴근</th>
-                                    <th scope="col">외출</th>
-                                    <th scope="col">이탈</th>
-                                    <th scope="col">비고</th>
-                                    <th scope="col">삭제</th>
-                                </tr>
-                            </thead>
-                            <tbody id="listBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 입력 패널 -->
+        <!-- 입력/기록 패널 -->
         <div class="panel" id="panel-form">
             <div class="glass-card" id="section-form" role="region" aria-label="근태 입력">
                 <div class="card-header">⏱ 근태 입력</div>
@@ -1015,6 +985,32 @@
                     </div>
 
                     <button class="btn-save" onclick="doSave()" aria-label="저장하기">저장하기</button>
+                </div>
+            </div>
+
+            <div class="glass-card" id="section-records" role="region" aria-label="기록 목록">
+                <div class="card-header">
+                    📋 기록 목록
+                    <span id="curFilter" aria-live="polite"></span>
+                </div>
+                <div class="card-body" style="padding:0 0 8px;">
+                    <div class="table-scroll">
+                        <table role="table" aria-label="근태 기록">
+                            <thead>
+                                <tr>
+                                    <th scope="col">날짜</th>
+                                    <th scope="col">직원</th>
+                                    <th scope="col">출근</th>
+                                    <th scope="col">퇴근</th>
+                                    <th scope="col">외출</th>
+                                    <th scope="col">이탈</th>
+                                    <th scope="col">비고</th>
+                                    <th scope="col">삭제</th>
+                                </tr>
+                            </thead>
+                            <tbody id="listBody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1272,7 +1268,6 @@
         'dashboard': 'panel-dashboard',
         'section-calendar': 'panel-calendar',
         'section-stats': 'panel-stats',
-        'section-records': 'panel-records',
         'section-form': 'panel-form'
     };
 
