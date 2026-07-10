@@ -13,7 +13,7 @@
         /* ── 기본 ── */
         body {
             font-family: -apple-system, 'Pretendard', 'Noto Sans KR', 'Segoe UI', sans-serif;
-            background: #f4f6f9;
+            background: #FAFAF9;
             color: #1e293b;
             min-height: 100vh;
             display: flex;
@@ -33,6 +33,9 @@
             overflow-x: auto;
         }
         .tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             background: none;
             border: none;
             border-bottom: 2px solid transparent;
@@ -45,11 +48,12 @@
             transition: all 0.15s;
             white-space: nowrap;
         }
+        .tab-btn svg, .card-header svg { width: 14px; height: 14px; flex-shrink: 0; }
         .tab-btn:hover { color: #1f2937; }
         .tab-btn.active { color: #D4A017; border-bottom-color: #D4A017; }
 
         /* ── 패널 ── */
-        .panel { display: none; flex-direction: column; gap: 14px; }
+        .panel { display: none; flex-direction: column; gap: 12px; }
         .panel.active { display: flex; }
 
         /* ── 메인 영역 ── */
@@ -66,7 +70,7 @@
         .topbar {
             height: 54px;
             background: #ffffff;
-            border-bottom: 1px solid #e8ecf0;
+            border-bottom: 1px solid #e8e6e1;
             display: flex;
             align-items: center;
             padding: 0 20px;
@@ -74,7 +78,6 @@
             position: sticky; top: 0;
             z-index: 50;
             flex-shrink: 0;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
         .topbar-title {
             font-size: 15px;
@@ -126,10 +129,10 @@
         /* ── 콘텐츠 ── */
         .content {
             flex: 1;
-            padding: 16px 20px;
+            padding: 14px 18px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
         }
 
         /* ── KPI 타일 ── */
@@ -142,9 +145,25 @@
         .kpi-tile {
             background: #ffffff;
             border: 1px solid #e8e6e1;
-            border-radius: 12px;
+            border-radius: 10px;
             padding: 14px 16px;
         }
+        .kpi-tile.kpi-ring { display: flex; align-items: center; gap: 12px; }
+        .kpi-ring-visual {
+            position: relative;
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .kpi-ring-visual::after {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            background: #ffffff;
+            border-radius: 50%;
+        }
+        .kpi-ring-body { flex: 1; min-width: 0; }
+        .kpi-ring-body .kpi-value { font-size: 20px; }
         .kpi-label {
             font-size: 10px;
             font-weight: 600;
@@ -154,7 +173,7 @@
             margin-bottom: 6px;
         }
         .kpi-value {
-            font-size: 22px;
+            font-size: 26px;
             font-weight: 800;
             color: #1f2937;
         }
@@ -175,14 +194,13 @@
         }
         .status-card {
             background: #ffffff;
-            border: 1px solid #e8ecf0;
-            border-radius: 12px;
+            border: 1px solid #e8e6e1;
+            border-radius: 10px;
             padding: 12px 14px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
         .status-card::before {
             content: '';
@@ -194,7 +212,7 @@
         .status-card.ok::before   { background: linear-gradient(90deg,#22c55e,#4ade80); }
         .status-card.late::before { background: linear-gradient(90deg,#ef4444,#f87171); }
         .status-card.out::before  { background: linear-gradient(90deg,#f59e0b,#fbbf24); }
-        .status-card:hover { border-color: #E8C547; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .status-card:hover { border-color: #D4A017; }
         .status-card.selected-card {
             border-color: #E8C547;
             background: #FFFBEB;
@@ -212,10 +230,9 @@
         /* ── 공통 카드 ── */
         .glass-card {
             background: #ffffff;
-            border: 1px solid #e8ecf0;
-            border-radius: 14px;
+            border: 1px solid #e8e6e1;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
         .card-header {
             padding: 11px 16px 10px;
@@ -227,7 +244,7 @@
             text-transform: uppercase;
             display: flex; align-items: center; gap: 7px;
         }
-        .card-body { padding: 14px 16px; }
+        .card-body { padding: 12px 14px; }
 
         /* ── 달력 ── */
         .calendar-grid {
@@ -719,7 +736,7 @@
         }
         .modal-stat-box {
             background: #f8fafc;
-            border: 1px solid #e8ecf0;
+            border: 1px solid #e8e6e1;
             border-radius: 10px;
             padding: 10px 12px;
             text-align: center;
@@ -818,7 +835,7 @@
         .day-modal-sub   { font-size: 12px; color: #94a3b8; margin-top: 2px; }
         .day-modal-body  { padding: 16px 22px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
         .day-record-card {
-            border: 1px solid #e8ecf0;
+            border: 1px solid #e8e6e1;
             border-radius: 12px;
             padding: 13px 16px;
             display: flex;
@@ -882,7 +899,7 @@
             .content { padding: 12px; }
         }
         /* ── content 배경 ── */
-        .content { background: #f4f6f9; }
+        .content { background: #FAFAF9; }
     </style>
 </head>
 <body>
@@ -903,10 +920,10 @@
 
     <!-- 탭바 -->
     <div class="tabbar" role="tablist">
-        <button class="tab-btn active" data-target="dashboard" onclick="navTo('dashboard', this)">📊 대시보드</button>
-        <button class="tab-btn" data-target="section-calendar" onclick="navTo('section-calendar', this)">📅 달력</button>
-        <button class="tab-btn" data-target="section-stats" onclick="navTo('section-stats', this)">📈 통계</button>
-        <button class="tab-btn" data-target="section-form" onclick="navTo('section-form', this)">✏️ 입력/기록</button>
+        <button class="tab-btn active" data-target="dashboard" onclick="navTo('dashboard', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="4"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="3" y2="20"/></svg> 대시보드</button>
+        <button class="tab-btn" data-target="section-calendar" onclick="navTo('section-calendar', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 달력</button>
+        <button class="tab-btn" data-target="section-stats" onclick="navTo('section-stats', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> 통계</button>
+        <button class="tab-btn" data-target="section-form" onclick="navTo('section-form', this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> 입력/기록</button>
     </div>
 
     <!-- 콘텐츠 -->
@@ -928,7 +945,7 @@
         <!-- 통계 패널 -->
         <div class="panel" id="panel-stats">
             <div class="glass-card" id="section-stats" role="region" aria-label="이탈 현황">
-                <div class="card-header">📊 이탈 현황</div>
+                <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> 이탈 현황</div>
                 <div class="card-body">
                     <div class="unit-toggle" role="group" aria-label="표시 단위">
                         <button class="unit-btn active" onclick="setUnit('min')"  id="unitMin">분</button>
@@ -946,7 +963,7 @@
         <!-- 입력/기록 패널 -->
         <div class="panel" id="panel-form">
             <div class="glass-card" id="section-form" role="region" aria-label="근태 입력">
-                <div class="card-header">⏱ 근태 입력</div>
+                <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg> 근태 입력</div>
                 <div class="card-body">
 
                     <div class="form-group">
@@ -990,7 +1007,7 @@
 
             <div class="glass-card" id="section-records" role="region" aria-label="기록 목록">
                 <div class="card-header">
-                    📋 기록 목록
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> 기록 목록
                     <span id="curFilter" aria-live="polite"></span>
                 </div>
                 <div class="card-body" style="padding:0 0 8px;">
@@ -1510,16 +1527,25 @@
         const totalLateMin = monthRecords.reduce((sum, r) => sum + (r.lateMinutes || 0), 0);
         const absenceCount = monthRecords.filter(r => r.absenceType === 'unauthorized').length;
 
+        const workingPct = Math.round((workingNow / users.length) * 100);
+        const latePct = Math.round((lateToday / users.length) * 100);
+
         const container = document.getElementById('dashboardKpis');
         if (!container) return;
         container.innerHTML = `
-            <div class="kpi-tile">
-                <div class="kpi-label">오늘 근무중 인원</div>
-                <div class="kpi-value">${workingNow}<span class="kpi-unit">명</span></div>
+            <div class="kpi-tile kpi-ring">
+                <div class="kpi-ring-visual" style="background:conic-gradient(#D4A017 ${workingPct}%, #E8E6E1 0)"></div>
+                <div class="kpi-ring-body">
+                    <div class="kpi-label">오늘 근무중 인원</div>
+                    <div class="kpi-value">${workingNow}<span class="kpi-unit">/${users.length}명</span></div>
+                </div>
             </div>
-            <div class="kpi-tile">
-                <div class="kpi-label">오늘 이탈 인원</div>
-                <div class="kpi-value kpi-warn">${lateToday}<span class="kpi-unit">명</span></div>
+            <div class="kpi-tile kpi-ring">
+                <div class="kpi-ring-visual" style="background:conic-gradient(#DC2626 ${latePct}%, #E8E6E1 0)"></div>
+                <div class="kpi-ring-body">
+                    <div class="kpi-label">오늘 이탈 인원</div>
+                    <div class="kpi-value kpi-warn">${lateToday}<span class="kpi-unit">/${users.length}명</span></div>
+                </div>
             </div>
             <div class="kpi-tile">
                 <div class="kpi-label">이번달 총 이탈시간</div>
