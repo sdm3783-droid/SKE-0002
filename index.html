@@ -284,6 +284,8 @@
         .profile-btn:hover { background: #FDF0C0; }
         .profile-btn.out { border-color: #DC2626; background: #FEF2F2; color: #DC2626; }
         .profile-btn.out:hover { background: #FEE2E2; }
+        .profile-btn.outing { border-color: #E85D5D; background: #FDEEEE; color: #E85D5D; }
+        .profile-btn.outing:hover { background: #FBDADA; }
         .profile-eval-link { font-size: 11px; color: #6b7280; text-decoration: underline; cursor: pointer; margin-top: 2px; }
 
         .timeline-legend { display: flex; gap: 14px; font-size: 11px; color: #6b7280; margin-bottom: 10px; }
@@ -1674,6 +1676,36 @@
         navTo('section-form');
     }
 
+    function quickOuting(type) {
+        const person = selPerson || users[0];
+        selPerson = person;
+        updatePersonUI();
+        selectDate(todayDateStr());
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const timeStr = `${hh}:${mm}`;
+
+        const rows = Array.from(document.querySelectorAll('#outingsContainer .outing-row'));
+        if (type === 'out') {
+            let target = rows.find(r => !r.querySelector('.outing-out').value);
+            if (!target) {
+                addOutingRow();
+                target = document.querySelector('#outingsContainer .outing-row:last-child');
+            }
+            target.querySelector('.outing-out').value = timeStr;
+        } else {
+            const target = [...rows].reverse().find(r => r.querySelector('.outing-out').value && !r.querySelector('.outing-ret').value);
+            if (target) {
+                target.querySelector('.outing-ret').value = timeStr;
+            } else {
+                showToast('외출 기록이 없습니다');
+            }
+        }
+        closeProfileModal();
+        navTo('section-form');
+    }
+
     function renderEmployeeGrid() {
         const container = document.getElementById('employeeGrid');
         if (!container) return;
@@ -1727,6 +1759,10 @@
             <div class="profile-actions">
                 <button class="profile-btn" onclick="quickClock('start')">지금 출근</button>
                 <button class="profile-btn out" onclick="quickClock('end')">지금 퇴근</button>
+            </div>
+            <div class="profile-actions">
+                <button class="profile-btn outing" onclick="quickOuting('out')">지금 외출</button>
+                <button class="profile-btn outing" onclick="quickOuting('in')">지금 복귀</button>
             </div>
             <div class="profile-eval-link" onclick="closeProfileModal(); openModal('${escHtml(person)}')">평가 보기</div>
         `;
