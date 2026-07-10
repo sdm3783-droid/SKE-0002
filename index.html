@@ -170,18 +170,83 @@
         .kpi-value.kpi-warn   { color: #DC2626; }
         .kpi-value.kpi-danger { color: #EA580C; }
 
-        /* ── 대시보드 상단(프로필 + 타임라인) ── */
-        .dash-top-grid {
+        /* ── 대시보드 상단(직원 카드 그리드 + 타임라인) ── */
+        .employee-grid {
             display: grid;
-            grid-template-columns: 260px 1fr;
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
         }
-        .profile-card .card-body {
+        .employee-card {
+            background: #ffffff;
+            border: 1px solid #e8e6e1;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        .employee-card:hover { border-color: #D4A017; }
+        .employee-card-avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #ffffff; font-size: 16px; font-weight: 700;
+            flex-shrink: 0;
+        }
+        .employee-card-info { flex: 1; min-width: 0; }
+        .employee-card-name { font-size: 13px; font-weight: 700; color: #1f2937; }
+        .employee-status-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 10px; font-weight: 600;
+            margin-top: 4px;
+            padding: 2px 7px;
+            border-radius: 10px;
+        }
+        .employee-status-badge .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .employee-status-badge.ok      { background: #f0fdf4; color: #16a34a; }
+        .employee-status-badge.late    { background: #fef2f2; color: #dc2626; }
+        .employee-status-badge.absence { background: #fff7ed; color: #ea580c; }
+        .employee-status-badge.none    { background: #f3f4f6; color: #9ca3af; }
+
+        /* ── 프로필 모달 ── */
+        .profile-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.45);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            backdrop-filter: blur(4px);
+        }
+        .profile-modal-overlay.open { display: flex; }
+        .profile-modal {
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+            width: 100%;
+            max-width: 320px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 8px;
             text-align: center;
+            animation: modalIn 0.2s cubic-bezier(.4,0,.2,1);
+        }
+        .profile-modal-close {
+            align-self: flex-end;
+            background: none;
+            border: none;
+            color: #9ca3af;
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+            margin: -4px -4px 0 0;
         }
         .profile-avatar-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
         .profile-avatar-btn {
@@ -256,7 +321,6 @@
         .recent-date { color: #9ca3af; font-size: 11px; min-width: 66px; }
         .recent-name { font-weight: 700; color: #1f2937; min-width: 18px; }
         @media (max-width: 900px) {
-            .dash-top-grid { grid-template-columns: 1fr; }
             .dash-bottom-grid { grid-template-columns: 1fr; }
         }
 
@@ -962,24 +1026,24 @@
 
         <!-- 대시보드 패널 -->
         <div class="panel active" id="panel-dashboard">
-            <div class="dash-top-grid">
-                <div class="glass-card profile-card">
-                    <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 오늘 현황</div>
-                    <div class="card-body" id="profileCard"></div>
+            <div class="glass-card employee-grid-card">
+                <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 직원 현황</div>
+                <div class="card-body">
+                    <div class="employee-grid" id="employeeGrid"></div>
                 </div>
-                <div class="glass-card timeline-card">
-                    <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg> 오늘 근무 타임라인</div>
-                    <div class="card-body">
-                        <div class="timeline-legend">
-                            <span><span class="legend-dot" style="background:#D4A017"></span>근무</span>
-                            <span><span class="legend-dot" style="background:#E85D5D"></span>외출</span>
-                            <span><span class="legend-dot" style="background:#EA580C"></span>무단결근</span>
-                        </div>
-                        <div class="timeline-hours">
-                            <span>7시</span><span>9시</span><span>11시</span><span>13시</span><span>15시</span><span>17시</span><span>19시</span>
-                        </div>
-                        <div id="timelineRows"></div>
+            </div>
+            <div class="glass-card timeline-card">
+                <div class="card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg> 오늘 근무 타임라인</div>
+                <div class="card-body">
+                    <div class="timeline-legend">
+                        <span><span class="legend-dot" style="background:#D4A017"></span>근무</span>
+                        <span><span class="legend-dot" style="background:#E85D5D"></span>외출</span>
+                        <span><span class="legend-dot" style="background:#EA580C"></span>무단결근</span>
                     </div>
+                    <div class="timeline-hours">
+                        <span>7시</span><span>9시</span><span>11시</span><span>13시</span><span>15시</span><span>17시</span><span>19시</span>
+                    </div>
+                    <div id="timelineRows"></div>
                 </div>
             </div>
             <div class="dash-bottom-grid">
@@ -1096,6 +1160,14 @@
         </div>
     </div><!-- /content -->
 </div><!-- /app-main -->
+
+<!-- 프로필 모달 -->
+<div class="profile-modal-overlay" id="profileModalOverlay" onclick="closeProfileModal(event)">
+    <div class="profile-modal" role="dialog" aria-modal="true">
+        <button class="profile-modal-close" onclick="closeProfileModal()" aria-label="닫기">✕</button>
+        <div id="profileModalBody"></div>
+    </div>
+</div>
 
 <!-- 날짜 기록 모달 -->
 <div class="day-modal-overlay" id="dayModalOverlay" onclick="closeDayModal(event)">
@@ -1582,18 +1654,11 @@
     }
 
     function renderDashboard() {
-        renderProfileCard();
+        renderEmployeeGrid();
         renderTimeline();
         renderDashMonthly();
         renderDashCounts();
         renderDashRecent();
-    }
-
-    function selectDashboardPerson(u) {
-        selPerson = u;
-        updatePersonUI();
-        loadDetail();
-        renderDashboard();
     }
 
     function quickClock(type) {
@@ -1605,26 +1670,56 @@
         const hh = String(now.getHours()).padStart(2, '0');
         const mm = String(now.getMinutes()).padStart(2, '0');
         document.getElementById(type === 'start' ? 'st' : 'et').value = `${hh}:${mm}`;
+        closeProfileModal();
         navTo('section-form');
     }
 
-    function renderProfileCard() {
-        const container = document.getElementById('profileCard');
+    function renderEmployeeGrid() {
+        const container = document.getElementById('employeeGrid');
         if (!container) return;
-        const person = selPerson || users[0];
+        const todayStr = todayDateStr();
+        container.innerHTML = users.map((u, i) => {
+            const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+            const rec = allRecords.find(r => r.date === todayStr && r.person === u);
+            let statusClass = 'none';
+            let statusText = '미기록';
+            if (rec) {
+                if (rec.absenceType === 'unauthorized') {
+                    statusClass = 'absence'; statusText = '무단결근';
+                } else if ((rec.lateMinutes || 0) > 0) {
+                    statusClass = 'late'; statusText = '이탈';
+                } else if (rec.startTime && !rec.endTime) {
+                    statusClass = 'ok'; statusText = '근무중';
+                } else if (rec.startTime && rec.endTime) {
+                    statusClass = 'ok'; statusText = '퇴근완료';
+                }
+            }
+            return `
+                <div class="employee-card" onclick="openProfileModal('${escHtml(u)}')">
+                    <div class="employee-card-avatar" style="background:${color}">${escHtml(u)}</div>
+                    <div class="employee-card-info">
+                        <div class="employee-card-name">${escHtml(u)}</div>
+                        <span class="employee-status-badge ${statusClass}"><span class="status-dot"></span>${statusText}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function profileContentHtml(person) {
         const todayStr = todayDateStr();
         const rec = allRecords.find(r => r.date === todayStr && r.person === person);
         const color = AVATAR_COLORS[users.indexOf(person) % AVATAR_COLORS.length];
 
         const avatarRow = users.map((u, i) => {
             const c = AVATAR_COLORS[i % AVATAR_COLORS.length];
-            return `<div class="profile-avatar-btn${u === person ? ' active' : ''}" style="background:${c}" onclick="selectDashboardPerson('${escHtml(u)}')">${escHtml(u)}</div>`;
+            return `<div class="profile-avatar-btn${u === person ? ' active' : ''}" style="background:${c}" onclick="openProfileModal('${escHtml(u)}')">${escHtml(u)}</div>`;
         }).join('');
 
         const startText = rec && rec.startTime ? rec.startTime : '-';
         const endText = rec && rec.endTime ? rec.endTime : '-';
 
-        container.innerHTML = `
+        return `
             <div class="profile-avatar-row">${avatarRow}</div>
             <div class="profile-avatar-big" style="background:${color}">${escHtml(person)}</div>
             <div class="profile-name">${escHtml(person)}</div>
@@ -1633,8 +1728,20 @@
                 <button class="profile-btn" onclick="quickClock('start')">지금 출근</button>
                 <button class="profile-btn out" onclick="quickClock('end')">지금 퇴근</button>
             </div>
-            <div class="profile-eval-link" onclick="openModal('${escHtml(person)}')">평가 보기</div>
+            <div class="profile-eval-link" onclick="closeProfileModal(); openModal('${escHtml(person)}')">평가 보기</div>
         `;
+    }
+
+    function openProfileModal(u) {
+        selPerson = u;
+        updatePersonUI();
+        document.getElementById('profileModalBody').innerHTML = profileContentHtml(u);
+        document.getElementById('profileModalOverlay').classList.add('open');
+    }
+
+    function closeProfileModal(event) {
+        if (event && event.target !== event.currentTarget) return;
+        document.getElementById('profileModalOverlay').classList.remove('open');
     }
 
     const TIMELINE_START = 7 * 60;
