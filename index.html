@@ -132,6 +132,41 @@
             gap: 14px;
         }
 
+        /* ── KPI 타일 ── */
+        .kpi-tiles {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .kpi-tiles-sm { grid-template-columns: repeat(2, 1fr); margin-bottom: 12px; }
+        .kpi-tile {
+            background: #ffffff;
+            border: 1px solid #e8e6e1;
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+        .kpi-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #6b7280;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .kpi-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1f2937;
+        }
+        .kpi-value .kpi-unit {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-left: 3px;
+        }
+        .kpi-value.kpi-warn   { color: #DC2626; }
+        .kpi-value.kpi-danger { color: #EA580C; }
+
         /* ── 직원 상태 카드 ── */
         .status-cards {
             display: grid;
@@ -1456,11 +1491,50 @@
         renderStats();
         renderTable();
         renderStatusCards();
+        renderDashboardKpis();
     }
 
     function changeMonth(delta) {
         curDate = new Date(curDate.getFullYear(), curDate.getMonth() + delta, 1);
         refresh();
+    }
+
+    // ──────────────────────────────────────────────────
+    // 대시보드 KPI 타일
+    // ──────────────────────────────────────────────────
+    function renderDashboardKpis() {
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+        const monthPrefix = todayStr.slice(0, 7);
+
+        const todayRecords = allRecords.filter(r => r.date === todayStr);
+        const workingNow = todayRecords.filter(r => r.absenceType !== 'unauthorized' && r.startTime && !r.endTime).length;
+        const lateToday = todayRecords.filter(r => (r.lateMinutes || 0) > 0).length;
+
+        const monthRecords = allRecords.filter(r => r.date && r.date.startsWith(monthPrefix));
+        const totalLateMin = monthRecords.reduce((sum, r) => sum + (r.lateMinutes || 0), 0);
+        const absenceCount = monthRecords.filter(r => r.absenceType === 'unauthorized').length;
+
+        const container = document.getElementById('dashboardKpis');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="kpi-tile">
+                <div class="kpi-label">오늘 근무중 인원</div>
+                <div class="kpi-value">${workingNow}<span class="kpi-unit">명</span></div>
+            </div>
+            <div class="kpi-tile">
+                <div class="kpi-label">오늘 이탈 인원</div>
+                <div class="kpi-value kpi-warn">${lateToday}<span class="kpi-unit">명</span></div>
+            </div>
+            <div class="kpi-tile">
+                <div class="kpi-label">이번달 총 이탈시간</div>
+                <div class="kpi-value">${totalLateMin}<span class="kpi-unit">분</span></div>
+            </div>
+            <div class="kpi-tile">
+                <div class="kpi-label">이번달 무단결근</div>
+                <div class="kpi-value kpi-danger">${absenceCount}<span class="kpi-unit">건</span></div>
+            </div>
+        `;
     }
 
     // ──────────────────────────────────────────────────
