@@ -1167,7 +1167,7 @@
     // ──────────────────────────────────────────────────
     // 직원 평가 모달
     // ──────────────────────────────────────────────────
-    const AVATAR_COLORS = ['#D4A017','#F2B705','#ec4899','#f59e0b','#10b981'];
+    const AVATAR_COLORS = ['#D4A017','#8A6D1B','#C8860D','#E8A33D','#B87333'];
 
     function getGrade(totalMin) {
         if (totalMin <= 60)  return { letter:'A', label:'우수', cls:'grade-A', bannerCls:'great',  icon:'🏆', msg:'우수한 근태를 유지하고 있습니다.' };
@@ -1787,6 +1787,23 @@
         const totals = users.map(u =>
             allRecords.filter(r => r.person === u).reduce((acc, cur) => acc + (cur.lateMinutes || 0), 0)
         );
+
+        // 통계 KPI 타일 (전체 이탈시간 합계 / 무단결근 총 건수)
+        const grandTotal = totals.reduce((a, b) => a + b, 0);
+        const absenceCount = allRecords.filter(r => r.absenceType === 'unauthorized').length;
+        const statsKpis = document.getElementById('statsKpis');
+        if (statsKpis) {
+            statsKpis.innerHTML = `
+                <div class="kpi-tile">
+                    <div class="kpi-label">전체 이탈시간 합계</div>
+                    <div class="kpi-value">${calcDisplay(grandTotal).chartLabel}</div>
+                </div>
+                <div class="kpi-tile">
+                    <div class="kpi-label">무단결근 총 건수</div>
+                    <div class="kpi-value kpi-danger">${absenceCount}<span class="kpi-unit">건</span></div>
+                </div>
+            `;
+        }
 
         // summaryBox: JS 호환성 유지 (숨김 상태로 채움)
         const summaryBox = document.getElementById('summaryBox');
