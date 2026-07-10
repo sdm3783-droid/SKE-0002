@@ -20,57 +20,40 @@
             overflow-x: hidden;
         }
 
-        /* ── 사이드바 ── */
-        .sidebar {
-            width: 64px;
-            min-height: 100vh;
-            background: #ffffff;
-            border-right: 1px solid #e8ecf0;
+        /* ── 탭바 ── */
+        .tabbar {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 18px 0;
-            gap: 6px;
-            position: fixed;
-            top: 0; left: 0; bottom: 0;
-            z-index: 100;
-            box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+            gap: 4px;
+            background: #ffffff;
+            border-bottom: 1px solid #e8e6e1;
+            padding: 0 20px;
+            position: sticky;
+            top: 54px;
+            z-index: 49;
+            overflow-x: auto;
         }
-        .sidebar-logo {
-            width: 36px; height: 36px;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
-            margin-bottom: 14px;
-            box-shadow: 0 4px 12px rgba(99,102,241,0.3);
-            flex-shrink: 0;
-        }
-        .sidebar-icon {
-            width: 40px; height: 40px;
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 17px;
+        .tab-btn {
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b7280;
             cursor: pointer;
-            transition: all 0.2s;
-            color: #94a3b8;
-            border: 1px solid transparent;
-            flex-shrink: 0;
+            font-family: inherit;
+            transition: all 0.15s;
+            white-space: nowrap;
         }
-        .sidebar-icon.active {
-            background: #ede9fe;
-            border-color: #c4b5fd;
-            color: #6366f1;
-        }
-        .sidebar-icon:hover:not(.active) {
-            background: #f1f5f9;
-            color: #64748b;
-        }
-        .sidebar-bottom { margin-top: auto; }
+        .tab-btn:hover { color: #1f2937; }
+        .tab-btn.active { color: #D4A017; border-bottom-color: #D4A017; }
+
+        /* ── 패널 ── */
+        .panel { display: none; flex-direction: column; gap: 14px; }
+        .panel.active { display: flex; }
 
         /* ── 메인 영역 ── */
         .app-main {
-            margin-left: 64px;
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -149,6 +132,41 @@
             gap: 14px;
         }
 
+        /* ── KPI 타일 ── */
+        .kpi-tiles {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .kpi-tiles-sm { grid-template-columns: repeat(2, 1fr); margin-bottom: 12px; }
+        .kpi-tile {
+            background: #ffffff;
+            border: 1px solid #e8e6e1;
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+        .kpi-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #6b7280;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .kpi-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1f2937;
+        }
+        .kpi-value .kpi-unit {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-left: 3px;
+        }
+        .kpi-value.kpi-warn   { color: #DC2626; }
+        .kpi-value.kpi-danger { color: #EA580C; }
+
         /* ── 직원 상태 카드 ── */
         .status-cards {
             display: grid;
@@ -176,10 +194,10 @@
         .status-card.ok::before   { background: linear-gradient(90deg,#22c55e,#4ade80); }
         .status-card.late::before { background: linear-gradient(90deg,#ef4444,#f87171); }
         .status-card.out::before  { background: linear-gradient(90deg,#f59e0b,#fbbf24); }
-        .status-card:hover { border-color: #c7d2fe; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .status-card:hover { border-color: #E8C547; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .status-card.selected-card {
-            border-color: #a5b4fc;
-            background: #f5f3ff;
+            border-color: #E8C547;
+            background: #FFFBEB;
         }
         .sc-name   { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 3px; }
         .sc-status { font-size: 11px; font-weight: 600; color: #94a3b8; }
@@ -190,16 +208,6 @@
         .status-card.ok .sc-time     { color: #86efac; }
         .status-card.late .sc-time   { color: #fca5a5; }
         .status-card.out .sc-time    { color: #fcd34d; }
-
-        /* ── 하단 2컬럼 ── */
-        .bottom-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            flex: 1;
-        }
-        .left-col  { display: flex; flex-direction: column; gap: 14px; }
-        .right-col { display: flex; flex-direction: column; gap: 14px; }
 
         /* ── 공통 카드 ── */
         .glass-card {
@@ -259,17 +267,17 @@
         .calendar-day.sat { color: #3b82f6; }
         .calendar-day.has-record { color: #1e293b; font-weight: 700; }
         .calendar-day.today {
-            background: #ede9fe;
-            border-color: #c4b5fd;
-            color: #6366f1 !important;
+            background: #FFF7E0;
+            border-color: #E8C547;
+            color: #D4A017 !important;
             font-weight: 700;
         }
         .calendar-day.selected {
-            background: #6366f1 !important;
-            border-color: #6366f1 !important;
+            background: #D4A017 !important;
+            border-color: #D4A017 !important;
             color: #ffffff !important;
             font-weight: 700;
-            box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+            box-shadow: 0 2px 8px rgba(212,160,23,0.3);
         }
         /* 아바타 스택 */
         .cal-avatars {
@@ -341,7 +349,7 @@
         .td-notes input {
             width: 100%;
             background: #ffffff;
-            border: 1px solid #6366f1;
+            border: 1px solid #D4A017;
             border-radius: 4px;
             padding: 3px 6px;
             font-size: 11px;
@@ -395,9 +403,9 @@
         }
         .person-btn:hover { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
         .person-btn.active {
-            background: #ede9fe;
-            border-color: #a5b4fc;
-            color: #6366f1;
+            background: #FFF7E0;
+            border-color: #E8C547;
+            color: #D4A017;
         }
 
         /* 선택된 날짜 */
@@ -406,7 +414,7 @@
             color: #94a3b8;
             margin-bottom: 10px;
         }
-        #viewDate { color: #6366f1; font-weight: 600; }
+        #viewDate { color: #D4A017; font-weight: 600; }
 
         /* 무단결근 */
         .absence-check-wrap {
@@ -433,10 +441,10 @@
 
         /* 시간 박스 */
         .time-box {
-            border: 1px solid #e0e7ff;
+            border: 1px solid #F5E6B8;
             border-radius: 10px;
             padding: 10px;
-            background: #f5f3ff;
+            background: #FFFBEB;
             margin-bottom: 10px;
         }
         .time-box.disabled { opacity: 0.4; pointer-events: none; }
@@ -464,8 +472,8 @@
             text-align: center;
         }
         .time-input-group input[type="time"]:focus {
-            border-color: #a5b4fc;
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+            border-color: #E8C547;
+            box-shadow: 0 0 0 3px rgba(212,160,23,0.1);
         }
         .input-error {
             border-color: #fca5a5 !important;
@@ -495,16 +503,16 @@
             width: 100%;
             padding: 7px;
             background: #ffffff;
-            border: 1px dashed #c7d2fe;
+            border: 1px dashed #E8C547;
             border-radius: 7px;
-            color: #818cf8;
+            color: #C8860D;
             font-size: 11px;
             cursor: pointer;
             margin-top: 2px;
             font-family: inherit;
             transition: all 0.15s;
         }
-        .btn-add-outing:hover { background: #ede9fe; border-color: #a5b4fc; color: #6366f1; }
+        .btn-add-outing:hover { background: #FFF7E0; border-color: #E8C547; color: #D4A017; }
 
         /* 비고 */
         textarea {
@@ -521,15 +529,15 @@
             transition: all 0.2s;
         }
         textarea:focus {
-            border-color: #a5b4fc;
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+            border-color: #E8C547;
+            box-shadow: 0 0 0 3px rgba(212,160,23,0.1);
         }
 
         /* 저장 버튼 */
         .btn-save {
             width: 100%;
             padding: 10px;
-            background: #6366f1;
+            background: #D4A017;
             border: none;
             border-radius: 10px;
             color: #ffffff;
@@ -540,11 +548,11 @@
             transition: all 0.2s;
             font-family: inherit;
             margin-top: 10px;
-            box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+            box-shadow: 0 2px 8px rgba(212,160,23,0.3);
         }
         .btn-save:hover {
-            background: #4f46e5;
-            box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+            background: #B8860B;
+            box-shadow: 0 4px 16px rgba(212,160,23,0.4);
         }
 
         /* ── 통계 ── */
@@ -563,9 +571,9 @@
             font-family: inherit;
         }
         .unit-btn.active {
-            background: #ede9fe;
-            border-color: #a5b4fc;
-            color: #6366f1;
+            background: #FFF7E0;
+            border-color: #E8C547;
+            color: #D4A017;
             font-weight: 600;
         }
         #curFilter {
@@ -604,9 +612,9 @@
             margin-top: 6px; text-align: center; cursor: pointer;
             transition: color 0.15s;
         }
-        .css-bar-name:hover { color: #6366f1; }
-        .bar-active .css-bar-name { color: #6366f1 !important; }
-        .bar-active .css-bar-val  { color: #6366f1 !important; }
+        .css-bar-name:hover { color: #D4A017; }
+        .bar-active .css-bar-name { color: #D4A017 !important; }
+        .bar-active .css-bar-val  { color: #D4A017 !important; }
 
         /* ── 토스트 ── */
         .toast {
@@ -798,14 +806,14 @@
         }
         .day-modal-date-box {
             width: 46px; height: 46px;
-            background: #ede9fe;
+            background: #FFF7E0;
             border-radius: 12px;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             flex-shrink: 0;
         }
-        .day-modal-date-box .dm-month { font-size: 9px; font-weight: 700; color: #6366f1; letter-spacing: 0.5px; text-transform: uppercase; }
-        .day-modal-date-box .dm-day   { font-size: 20px; font-weight: 800; color: #6366f1; line-height: 1; }
+        .day-modal-date-box .dm-month { font-size: 9px; font-weight: 700; color: #D4A017; letter-spacing: 0.5px; text-transform: uppercase; }
+        .day-modal-date-box .dm-day   { font-size: 20px; font-weight: 800; color: #D4A017; line-height: 1; }
         .day-modal-title { font-size: 16px; font-weight: 700; color: #1e293b; }
         .day-modal-sub   { font-size: 12px; color: #94a3b8; margin-top: 2px; }
         .day-modal-body  { padding: 16px 22px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
@@ -852,7 +860,7 @@
         }
         .day-modal-select-btn {
             padding: 8px 16px;
-            background: #6366f1;
+            background: #D4A017;
             border: none;
             border-radius: 8px;
             color: #fff;
@@ -862,15 +870,12 @@
             font-family: inherit;
             transition: all 0.15s;
         }
-        .day-modal-select-btn:hover { background: #4f46e5; }
+        .day-modal-select-btn:hover { background: #B8860B; }
 
         /* ── 반응형 ── */
         @media (max-width: 900px) {
-            .sidebar { display: none; }
-            .app-main { margin-left: 0; }
             .status-cards { grid-template-columns: repeat(3,1fr); }
-            .bottom-grid { grid-template-columns: 1fr; }
-            .right-col { order: -1; }
+            .kpi-tiles { grid-template-columns: repeat(2,1fr); }
         }
         @media (max-width: 520px) {
             .status-cards { grid-template-columns: repeat(2,1fr); }
@@ -881,19 +886,6 @@
     </style>
 </head>
 <body>
-
-<!-- 사이드바 -->
-<aside class="sidebar">
-    <div class="sidebar-logo">🕐</div>
-    <div class="sidebar-icon active" title="대시보드" onclick="navTo('dashboard', this)">📊</div>
-    <div class="sidebar-icon" title="달력" onclick="navTo('section-calendar', this)">📅</div>
-    <div class="sidebar-icon" title="통계" onclick="navTo('section-stats', this)">📈</div>
-    <div class="sidebar-icon" title="기록" onclick="navTo('section-records', this)">📋</div>
-    <div class="sidebar-icon" title="입력" onclick="navTo('section-form', this)">✏️</div>
-    <div class="sidebar-bottom">
-        <div class="sidebar-icon" title="맨 위로" onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆️</div>
-    </div>
-</aside>
 
 <!-- 메인 -->
 <div class="app-main">
@@ -909,116 +901,123 @@
         </div>
     </header>
 
+    <!-- 탭바 -->
+    <div class="tabbar" role="tablist">
+        <button class="tab-btn active" data-target="dashboard" onclick="navTo('dashboard', this)">📊 대시보드</button>
+        <button class="tab-btn" data-target="section-calendar" onclick="navTo('section-calendar', this)">📅 달력</button>
+        <button class="tab-btn" data-target="section-stats" onclick="navTo('section-stats', this)">📈 통계</button>
+        <button class="tab-btn" data-target="section-records" onclick="navTo('section-records', this)">📋 기록</button>
+        <button class="tab-btn" data-target="section-form" onclick="navTo('section-form', this)">✏️ 입력</button>
+    </div>
+
     <!-- 콘텐츠 -->
     <div class="content">
 
-        <!-- 직원 상태 카드 -->
-        <div class="status-cards" id="statusCards"></div>
+        <!-- 대시보드 패널 -->
+        <div class="panel active" id="panel-dashboard">
+            <div class="kpi-tiles" id="dashboardKpis"></div>
+            <div class="status-cards" id="statusCards"></div>
+        </div>
 
-        <!-- 하단 2컬럼 -->
-        <div class="bottom-grid">
+        <!-- 달력 패널 -->
+        <div class="panel" id="panel-calendar">
+            <div class="glass-card" id="section-calendar" role="region" aria-label="달력">
+                <div id="calendarGrid" class="calendar-grid" role="grid" aria-label="날짜 선택"></div>
+            </div>
+        </div>
 
-            <!-- 좌측: 입력 폼 + 기록 테이블 -->
-            <div class="left-col">
+        <!-- 통계 패널 -->
+        <div class="panel" id="panel-stats">
+            <div class="glass-card" id="section-stats" role="region" aria-label="이탈 현황">
+                <div class="card-header">📊 이탈 현황</div>
+                <div class="card-body">
+                    <div class="unit-toggle" role="group" aria-label="표시 단위">
+                        <button class="unit-btn active" onclick="setUnit('min')"  id="unitMin">분</button>
+                        <button class="unit-btn"        onclick="setUnit('hour')" id="unitHour">시간</button>
+                        <button class="unit-btn"        onclick="setUnit('day')"  id="unitDay">일</button>
+                    </div>
+                    <div class="kpi-tiles kpi-tiles-sm" id="statsKpis"></div>
+                    <div id="cssBarChart" class="css-bar-chart"></div>
+                    <!-- summaryBox: JS 호환성 유지 (숨김) -->
+                    <div id="summaryBox" class="summary-grid" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
 
-                <!-- 입력 폼 -->
-                <div class="glass-card" id="section-form" role="region" aria-label="근태 입력">
-                    <div class="card-header">⏱ 근태 입력</div>
-                    <div class="card-body">
+        <!-- 기록 패널 -->
+        <div class="panel" id="panel-records">
+            <div class="glass-card" id="section-records" role="region" aria-label="기록 목록">
+                <div class="card-header">
+                    📋 기록 목록
+                    <span id="curFilter" aria-live="polite"></span>
+                </div>
+                <div class="card-body" style="padding:0 0 8px;">
+                    <div class="table-scroll">
+                        <table role="table" aria-label="근태 기록">
+                            <thead>
+                                <tr>
+                                    <th scope="col">날짜</th>
+                                    <th scope="col">직원</th>
+                                    <th scope="col">출근</th>
+                                    <th scope="col">퇴근</th>
+                                    <th scope="col">외출</th>
+                                    <th scope="col">이탈</th>
+                                    <th scope="col">비고</th>
+                                    <th scope="col">삭제</th>
+                                </tr>
+                            </thead>
+                            <tbody id="listBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                        <div class="form-group">
-                            <label class="form-label">직원 선택</label>
-                            <div id="personList" class="person-grid" role="group" aria-label="직원 선택"></div>
-                        </div>
+        <!-- 입력 패널 -->
+        <div class="panel" id="panel-form">
+            <div class="glass-card" id="section-form" role="region" aria-label="근태 입력">
+                <div class="card-header">⏱ 근태 입력</div>
+                <div class="card-body">
 
-                        <div class="selected-date-label">
-                            날짜: <span id="viewDate" aria-live="polite">날짜 선택</span>
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">직원 선택</label>
+                        <div id="personList" class="person-grid" role="group" aria-label="직원 선택"></div>
+                    </div>
 
-                        <div class="absence-check-wrap">
-                            <input type="checkbox" id="chkAbsence" onchange="toggleAbsence()" aria-label="무단결근 여부">
-                            <label for="chkAbsence">무단결근 (480분 연차 자동 적용)</label>
-                        </div>
+                    <div class="selected-date-label">
+                        날짜: <span id="viewDate" aria-live="polite">날짜 선택</span>
+                    </div>
 
-                        <div class="time-box" id="timeBox">
-                            <div class="time-row">
-                                <div class="time-input-group">
-                                    <label for="st">출근</label>
-                                    <input type="time" id="st" aria-label="출근 시간">
-                                </div>
-                                <div class="time-input-group">
-                                    <label for="et">퇴근</label>
-                                    <input type="time" id="et" aria-label="퇴근 시간">
-                                </div>
+                    <div class="absence-check-wrap">
+                        <input type="checkbox" id="chkAbsence" onchange="toggleAbsence()" aria-label="무단결근 여부">
+                        <label for="chkAbsence">무단결근 (480분 연차 자동 적용)</label>
+                    </div>
+
+                    <div class="time-box" id="timeBox">
+                        <div class="time-row">
+                            <div class="time-input-group">
+                                <label for="st">출근</label>
+                                <input type="time" id="st" aria-label="출근 시간">
                             </div>
-                            <div id="outingsContainer"></div>
-                            <button type="button" class="btn-add-outing" onclick="addOutingRow()" aria-label="외출 추가">＋ 외출 추가</button>
-                            <div id="timeError" class="error-msg" role="alert" aria-live="assertive"></div>
+                            <div class="time-input-group">
+                                <label for="et">퇴근</label>
+                                <input type="time" id="et" aria-label="퇴근 시간">
+                            </div>
                         </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="memo">비고</label>
-                            <textarea id="memo" rows="2" aria-label="비고"></textarea>
-                        </div>
-
-                        <button class="btn-save" onclick="doSave()" aria-label="저장하기">저장하기</button>
+                        <div id="outingsContainer"></div>
+                        <button type="button" class="btn-add-outing" onclick="addOutingRow()" aria-label="외출 추가">＋ 외출 추가</button>
+                        <div id="timeError" class="error-msg" role="alert" aria-live="assertive"></div>
                     </div>
-                </div>
 
-                <!-- 기록 테이블 -->
-                <div class="glass-card" id="section-records" role="region" aria-label="기록 목록">
-                    <div class="card-header">
-                        📋 기록 목록
-                        <span id="curFilter" aria-live="polite"></span>
+                    <div class="form-group">
+                        <label class="form-label" for="memo">비고</label>
+                        <textarea id="memo" rows="2" aria-label="비고"></textarea>
                     </div>
-                    <div class="card-body" style="padding:0 0 8px;">
-                        <div class="table-scroll">
-                            <table role="table" aria-label="근태 기록">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">날짜</th>
-                                        <th scope="col">직원</th>
-                                        <th scope="col">출근</th>
-                                        <th scope="col">퇴근</th>
-                                        <th scope="col">외출</th>
-                                        <th scope="col">이탈</th>
-                                        <th scope="col">비고</th>
-                                        <th scope="col">삭제</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="listBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
+
+                    <button class="btn-save" onclick="doSave()" aria-label="저장하기">저장하기</button>
                 </div>
-
-            </div><!-- /left-col -->
-
-            <!-- 우측: 달력 + 통계 -->
-            <div class="right-col">
-
-                <!-- 달력 -->
-                <div class="glass-card" id="section-calendar" role="region" aria-label="달력">
-                    <div id="calendarGrid" class="calendar-grid" role="grid" aria-label="날짜 선택"></div>
-                </div>
-
-                <!-- 통계 -->
-                <div class="glass-card" id="section-stats" role="region" aria-label="이탈 현황">
-                    <div class="card-header">📊 이탈 현황</div>
-                    <div class="card-body">
-                        <div class="unit-toggle" role="group" aria-label="표시 단위">
-                            <button class="unit-btn active" onclick="setUnit('min')"  id="unitMin">분</button>
-                            <button class="unit-btn"        onclick="setUnit('hour')" id="unitHour">시간</button>
-                            <button class="unit-btn"        onclick="setUnit('day')"  id="unitDay">일</button>
-                        </div>
-                        <div id="cssBarChart" class="css-bar-chart"></div>
-                        <!-- summaryBox: JS 호환성 유지 (숨김) -->
-                        <div id="summaryBox" class="summary-grid" style="display:none;"></div>
-                    </div>
-                </div>
-
-            </div><!-- /right-col -->
-        </div><!-- /bottom-grid -->
+            </div>
+        </div>
     </div><!-- /content -->
 </div><!-- /app-main -->
 
@@ -1110,6 +1109,7 @@
         document.getElementById('dmSelectBtn').onclick = () => {
             closeDayModal();
             selectDate(dateStr);
+            navTo('section-form');
         };
 
         const body = document.getElementById('dmBody');
@@ -1167,7 +1167,7 @@
     // ──────────────────────────────────────────────────
     // 직원 평가 모달
     // ──────────────────────────────────────────────────
-    const AVATAR_COLORS = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981'];
+    const AVATAR_COLORS = ['#D4A017','#8A6D1B','#C8860D','#E8A33D','#B87333'];
 
     function getGrade(totalMin) {
         if (totalMin <= 60)  return { letter:'A', label:'우수', cls:'grade-A', bannerCls:'great',  icon:'🏆', msg:'우수한 근태를 유지하고 있습니다.' };
@@ -1268,23 +1268,22 @@
     // ──────────────────────────────────────────────────
     // 사이드바 네비게이션
     // ──────────────────────────────────────────────────
+    const PANEL_MAP = {
+        'dashboard': 'panel-dashboard',
+        'section-calendar': 'panel-calendar',
+        'section-stats': 'panel-stats',
+        'section-records': 'panel-records',
+        'section-form': 'panel-form'
+    };
+
     function navTo(target, el) {
-        // active 클래스 이동
-        document.querySelectorAll('.sidebar-icon').forEach(i => i.classList.remove('active'));
+        if (!el) el = document.querySelector(`.tab-btn[data-target="${target}"]`);
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
         el.classList.add('active');
 
-        if (target === 'dashboard') {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            return;
-        }
-        const section = document.getElementById(target);
-        if (section) {
-            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            // 잠깐 하이라이트
-            section.style.outline = '2px solid #a5b4fc';
-            section.style.outlineOffset = '2px';
-            setTimeout(() => { section.style.outline = ''; section.style.outlineOffset = ''; }, 1200);
-        }
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        const panel = document.getElementById(PANEL_MAP[target]);
+        if (panel) panel.classList.add('active');
     }
 
     // ──────────────────────────────────────────────────
@@ -1492,11 +1491,50 @@
         renderStats();
         renderTable();
         renderStatusCards();
+        renderDashboardKpis();
     }
 
     function changeMonth(delta) {
         curDate = new Date(curDate.getFullYear(), curDate.getMonth() + delta, 1);
         refresh();
+    }
+
+    // ──────────────────────────────────────────────────
+    // 대시보드 KPI 타일
+    // ──────────────────────────────────────────────────
+    function renderDashboardKpis() {
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+        const monthPrefix = todayStr.slice(0, 7);
+
+        const todayRecords = allRecords.filter(r => r.date === todayStr);
+        const workingNow = todayRecords.filter(r => r.absenceType !== 'unauthorized' && r.startTime && !r.endTime).length;
+        const lateToday = todayRecords.filter(r => (r.lateMinutes || 0) > 0).length;
+
+        const monthRecords = allRecords.filter(r => r.date && r.date.startsWith(monthPrefix));
+        const totalLateMin = monthRecords.reduce((sum, r) => sum + (r.lateMinutes || 0), 0);
+        const absenceCount = monthRecords.filter(r => r.absenceType === 'unauthorized').length;
+
+        const container = document.getElementById('dashboardKpis');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="kpi-tile">
+                <div class="kpi-label">오늘 근무중 인원</div>
+                <div class="kpi-value">${workingNow}<span class="kpi-unit">명</span></div>
+            </div>
+            <div class="kpi-tile">
+                <div class="kpi-label">오늘 이탈 인원</div>
+                <div class="kpi-value kpi-warn">${lateToday}<span class="kpi-unit">명</span></div>
+            </div>
+            <div class="kpi-tile">
+                <div class="kpi-label">이번달 총 이탈시간</div>
+                <div class="kpi-value">${totalLateMin}<span class="kpi-unit">분</span></div>
+            </div>
+            <div class="kpi-tile">
+                <div class="kpi-label">이번달 무단결근</div>
+                <div class="kpi-value kpi-danger">${absenceCount}<span class="kpi-unit">건</span></div>
+            </div>
+        `;
     }
 
     // ──────────────────────────────────────────────────
@@ -1749,6 +1787,23 @@
         const totals = users.map(u =>
             allRecords.filter(r => r.person === u).reduce((acc, cur) => acc + (cur.lateMinutes || 0), 0)
         );
+
+        // 통계 KPI 타일 (전체 이탈시간 합계 / 무단결근 총 건수)
+        const grandTotal = totals.reduce((a, b) => a + b, 0);
+        const absenceCount = allRecords.filter(r => r.absenceType === 'unauthorized').length;
+        const statsKpis = document.getElementById('statsKpis');
+        if (statsKpis) {
+            statsKpis.innerHTML = `
+                <div class="kpi-tile">
+                    <div class="kpi-label">전체 이탈시간 합계</div>
+                    <div class="kpi-value">${calcDisplay(grandTotal).chartLabel}</div>
+                </div>
+                <div class="kpi-tile">
+                    <div class="kpi-label">무단결근 총 건수</div>
+                    <div class="kpi-value kpi-danger">${absenceCount}<span class="kpi-unit">건</span></div>
+                </div>
+            `;
+        }
 
         // summaryBox: JS 호환성 유지 (숨김 상태로 채움)
         const summaryBox = document.getElementById('summaryBox');
